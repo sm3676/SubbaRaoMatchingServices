@@ -15,6 +15,7 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from PIL import Image, ImageOps
 import pytesseract
+from supabase import create_client
 
 from .config import settings
 from .security import (
@@ -80,6 +81,17 @@ class CommissionIn(BaseModel):
     amount: float = Field(ge=0)
     status: str = "pending"
     notes: str = ""
+
+
+class PasswordRecoveryIn(BaseModel):
+    email: str
+
+
+class PasswordUpdateIn(BaseModel):
+    access_token: str
+    refresh_token: str
+    password: str = Field(min_length=12, max_length=128)
+
 
 
 # --------------------------------------------------
@@ -404,6 +416,95 @@ def login(payload: dict):
 
     except Exception:
         raise HTTPException(401, "Invalid email or password")
+
+
+
+# --------------------------------------------------
+# PASSWORD RECOVERY
+# --------------------------------------------------
+
+@app.post("/api/auth/password-recovery")
+def password_recovery(payload: PasswordRecoveryIn):
+    email = payload.email.strip()
+
+    if not email or "@" not in email:
+        raise HTTPException(400, "Enter a valid email address")
+
+    try:
+        public_client.auth.reset_password_for_email(
+            email,
+            options={
+                "redirect_to": settings.frontend_origin.rstrip("/")
+            }
+        )
+
+        # Do not reveal whether an email exists in the system.
+        return {
+            "ok": True,
+            "message": (
+                "If an account exists for this email, "
+                "a recovery email has been sent."
+            )
+        }
+
+    except Exception:
+        # Keep account existence private.
+        return {
+            "ok": True,
+            "message": (
+                "If an account exists for this email, "
+                "a recovery email has been sent."
+            )
+        }
+
+
+@app.post("/api/auth/update-password")
+def update_password(payload: PasswordUpdateIn):
+    if not payload.access_token or not payload.refresh_token:
+        raise HTTPException(400, "Recovery session is missing")
+
+    if len(payload.password) < 12:
+        raise HTTPException(
+            400,
+            "Password must contain at least 12 characters"
+        )
+
+    try:
+        # Create a separate client so one user's recovery session
+        # cannot modify the shared public_client session.
+        recovery_client = create_client(
+            settings.supabase_url,
+            settings.supabase_anon_key
+        )
+
+        recovery_client.auth.set_session(
+            payload.access_token,
+            payload.refresh_token
+        )
+
+        result = recovery_client.auth.update_user({
+            "password": payload.password
+        })
+
+        if not result.user:
+            raise HTTPException(
+                400,
+                "Password update could not be confirmed"
+            )
+
+        return {
+            "ok": True,
+            "message": "Password updated successfully"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            400,
+            "Recovery link is invalid or expired. Request a new recovery email."
+        )
 
 
 @app.post("/api/auth/logout")

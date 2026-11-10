@@ -1,8 +1,11 @@
 
+
+
 const app = document.querySelector('#app');
 
 let token = localStorage.getItem('mm_token') || '';
 let user = null;
+let recoverySession = null;
 let lang = localStorage.getItem('mm_lang') || 'en';
 let page = 'dashboard';
 let allProfiles = [];
@@ -132,6 +135,7 @@ function brandBanner() {
 // --------------------------------------------------
 
 
+
 function login() {
     document.title = 'Subba Rao Matching Services';
 
@@ -145,7 +149,7 @@ function login() {
 
             <div class="field">
                 <label>${t('email')}</label>
-                <input name="email" type="email" required>
+                <input id="login-email" name="email" type="email" required>
             </div>
 
             <div class="field">
@@ -154,6 +158,12 @@ function login() {
             </div>
 
             <button type="submit">${t('login')}</button>
+
+            <p style="text-align:center;margin:14px 0">
+                <a href="#" onclick="forgotPassword(event)">
+                    Forgot Password?
+                </a>
+            </p>
 
             <button type="button" class="secondary" onclick="toggleLang()">
                 ${lang === 'en' ? 'తెలుగు' : 'English'}
@@ -177,6 +187,170 @@ async function signin(e) {
         notice(x.message);
     }
 }
+
+
+async function forgotPassword(e) {
+    if (e) e.preventDefault();
+
+    const email = document.querySelector('#login-email')?.value.trim();
+
+    if (!email) {
+        return notice('Please enter your email address first.');
+    }
+
+    try {
+        await api('/api/auth/password-recovery', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
+
+        notice(
+            'If an account exists for this email, a password recovery link has been sent. Please check your inbox.'
+        );
+    } catch (error) {
+        notice(error.message);
+    }
+}
+
+
+function showPasswordReset() {
+    app.innerHTML = `
+        ${brandBanner()}
+
+        <form class="login" onsubmit="updatePassword(event)">
+            <h1>Reset Password</h1>
+            <p class="muted">
+                Enter your new password below.
+            </p>
+
+            <div class="field">
+                <label>New Password</label>
+                <input
+                    name="password"
+                    type="password"
+                    minlength="12"
+                    autocomplete="new-password"
+                    required
+                >
+            </div>
+
+            <div class="field">
+                <label>Confirm New Password</label>
+                <input
+                    name="confirm_password"
+                    type="password"
+                    minlength="12"
+                    autocomplete="new-password"
+                    required
+                >
+            </div>
+
+            <button type="submit">Update Password</button>
+        </form>
+    `;
+}
+
+
+async function updatePassword(e) {
+    e.preventDefault();
+
+    if (!recoverySession) {
+        return notice(
+            'Recovery session is missing or expired. Please request a new recovery email.'
+        );
+    }
+
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form));
+
+    if (data.password !== data.confirm_password) {
+        return notice('Passwords do not match.');
+    }
+
+    if (data.password.length < 12) {
+        return notice('Password must contain at least 12 characters.');
+    }
+
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = 'Updating...';
+
+    try {
+        await api('/api/auth/update-password', {
+            method: 'POST',
+            body: JSON.stringify({
+                access_token: recoverySession.access_token,
+                refresh_token: recoverySession.refresh_token,
+                password: data.password
+            })
+        });
+
+        recoverySession = null;
+        token = '';
+        localStorage.removeItem('mm_token');
+
+        notice('Password updated successfully. Please sign in with your new password.');
+
+        login();
+
+    } catch (error) {
+        notice(error.message);
+        button.disabled = false;
+        button.textContent = 'Update Password';
+    }
+}
+
+
+function checkPasswordRecovery() {
+    const hash = window.location.hash;
+
+    if (!hash) return false;
+
+    const params = new URLSearchParams(hash.substring(1));
+
+    if (params.get('type') === 'recovery') {
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (!accessToken || !refreshToken) {
+            notice('Recovery link is incomplete. Please request a new link.');
+            return false;
+        }
+
+        recoverySession = {
+            access_token: accessToken,
+            refresh_token: refreshToken
+        };
+
+        // Remove sensitive tokens from the browser address bar.
+        history.replaceState(
+            null,
+            document.title,
+            window.location.pathname + window.location.search
+        );
+
+        showPasswordReset();
+        return true;
+    }
+
+    if (params.has('error')) {
+        const errorDescription =
+            params.get('error_description') ||
+            params.get('error_code') ||
+            'Recovery link is invalid or expired.';
+
+        history.replaceState(
+            null,
+            document.title,
+            window.location.pathname + window.location.search
+        );
+
+        notice(errorDescription);
+    }
+
+    return false;
+}
+
 
 async function boot() {
     try {
@@ -1507,4 +1681,6 @@ async function match() {
 // START APPLICATION
 // --------------------------------------------------
 
-boot();
+if (!checkPasswordRecovery()) {
+    boot();
+}
