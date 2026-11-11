@@ -1,6 +1,5 @@
 
 
-
 const app = document.querySelector('#app');
 
 let token = localStorage.getItem('mm_token') || '';
@@ -273,6 +272,7 @@ function showPasswordReset() {
 }
 
 
+
 async function updatePassword(e) {
     e.preventDefault();
 
@@ -298,25 +298,30 @@ async function updatePassword(e) {
     button.textContent = 'Updating...';
 
     try {
-        await api('/api/auth/update-password', {
-            method: 'POST',
-            body: JSON.stringify({
+        const { error: sessionError } =
+            await supabaseAuth.auth.setSession({
                 access_token: recoverySession.access_token,
-                refresh_token: recoverySession.refresh_token,
-                password: data.password
-            })
+                refresh_token: recoverySession.refresh_token
+            });
+
+        if (sessionError) throw sessionError;
+
+        const { error } = await supabaseAuth.auth.updateUser({
+            password: data.password
         });
 
+        if (error) throw error;
+
         recoverySession = null;
-        token = '';
-        localStorage.removeItem('mm_token');
 
         notice('Password updated successfully. Please sign in with your new password.');
 
+        await supabaseAuth.auth.signOut();
         login();
 
     } catch (error) {
-        notice(error.message);
+        notice(error.message || 'Unable to update password.');
+
         button.disabled = false;
         button.textContent = 'Update Password';
     }
@@ -475,7 +480,7 @@ function toggleLang() {
 
 function render() {
     document.title = 'Subba Rao Matching Services';
-    
+
     console.log("BANNER FUNCTION:", typeof brandBanner);
     console.log("BANNER HTML:", brandBanner());
     app.innerHTML = `
@@ -551,7 +556,7 @@ async function load() {
     const v = document.querySelector('#view');
 
     try {
-        
+
         if (page === 'dashboard') {
             const d = await api('/api/dashboard');
 
@@ -624,7 +629,7 @@ async function load() {
             `;
         }
 
-        
+
 
         if (page === 'profiles') {
             const d = await api('/api/profiles');
@@ -638,7 +643,7 @@ async function load() {
                 <form class="card" onsubmit="saveProfile(event)">
                     <div class="grid2">
                         ${fld('gender', t('gender'),
-                            '<option>Male</option><option>Female</option>', 'select')}
+                                                        '<option>Male</option><option>Female</option>', 'select')}
                         ${fld('full_name', t('name'))}
                         ${fld('age', t('age'), '', 'number')}
                         ${fld('height', 'Height (e.g. 5 ft 6 in)')}
@@ -1112,8 +1117,22 @@ async function viewProfile(profileId) {
                 </button>
             </div>
 
-            <div class="card">
-                <h2>Profile Information</h2>
+                        <div class="card">
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    gap:12px;
+                    flex-wrap:wrap;
+                ">
+                    <h2>Profile Information</h2>
+
+                    <button type="button"
+                        onclick="editProfile('${escapeHTML(p.id)}')">
+                        Edit Profile
+                    </button>
+                </div>
+
                 <div class="grid2">
                     ${fields.map(([label, value]) => `
                         <div class="field">
@@ -1121,6 +1140,11 @@ async function viewProfile(profileId) {
                             <p>${escapeHTML(value)}</p>
                         </div>
                     `).join('')}
+
+                    <div class="field">
+                        <label>Notes</label>
+                        <p>${escapeHTML(p.notes)}</p>
+                    </div>
                 </div>
             </div>
 
@@ -1156,6 +1180,135 @@ async function viewProfile(profileId) {
         `;
     }
 }
+
+// --------------------------------------------------
+// EDIT PROFILE
+// --------------------------------------------------
+
+function editInput(name, label, value, type = 'text') {
+    const safeValue = value === null || value === undefined ? '' : String(value);
+    return `
+        <div class="field">
+            <label for="edit_${name}">${escapeHTML(label)}</label>
+            <input id="edit_${name}" name="${name}" type="${type}"
+                value="${escapeHTML(safeValue)}"
+                ${type === 'number' ? 'min="0" step="any"' : ''}>
+        </div>
+    `;
+}
+
+async function editProfile(profileId) {
+    const v = document.querySelector('#view');
+    try {
+        v.innerHTML = '<p>Loading profile for editing...</p>';
+        const data = await api('/api/profiles/' + encodeURIComponent(profileId));
+        const p = data.profile;
+
+        const genderOptions = ['Male', 'Female'].map(value => `
+            <option value="${value}" ${String(p.gender || '') === value ? 'selected' : ''}>${value}</option>
+        `).join('');
+
+        v.innerHTML = `
+            <button type="button" class="secondary"
+                onclick="viewProfile('${escapeHTML(p.id)}')">← Cancel</button>
+            <h1>Edit Profile</h1>
+            <form class="card" onsubmit="saveProfileChanges(event, '${escapeHTML(p.id)}')">
+                <h2>Personal Information</h2>
+                <div class="grid2">
+                    <div class="field">
+                        <label for="edit_gender">Gender</label>
+                        <select id="edit_gender" name="gender">${genderOptions}</select>
+                    </div>
+                    ${editInput('full_name', 'Full Name', p.full_name)}
+                    ${editInput('age', 'Age', p.age, 'number')}
+                    ${editInput('height', 'Height (e.g. 5\'6\")', p.height)}
+                    ${editInput('location', 'Location', p.location)}
+                    ${editInput('gothram', 'Gothram', p.gothram)}
+                    ${editInput('star', 'Nakshatram / Star', p.star)}
+                </div>
+
+                <h2>Education & Career</h2>
+                <div class="grid2">
+                    ${editInput('education', 'Education', p.education)}
+                    ${editInput('job', 'Job / Profession', p.job)}
+                    ${editInput('salary_lpa', 'Salary (LPA)', p.salary_lpa, 'number')}
+                </div>
+
+                <h2>Contact & Source Details</h2>
+                <div class="grid2">
+                    ${editInput('phone', 'Phone', p.phone)}
+                    ${editInput('source_group', 'WhatsApp Group / Source', p.source_group)}
+                    ${editInput('source_sender', 'Source Sender', p.source_sender)}
+                    ${editInput('source_date', 'Source Date', p.source_date ? String(p.source_date).slice(0, 10) : '', 'date')}
+                </div>
+
+                <div class="field">
+                    <label for="edit_notes">Notes</label>
+                    <textarea id="edit_notes" name="notes" rows="4">${escapeHTML(p.notes || '')}</textarea>
+                </div>
+
+                ${user?.role === 'admin' ? `
+                    <h2>Admin-only Status</h2>
+                    <div class="grid2">
+                        ${editInput('verification_status', 'Verification Status', p.verification_status)}
+                        ${editInput('marriage_status', 'Marriage Status', p.marriage_status)}
+                    </div>
+                ` : ''}
+
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+                    <button type="submit">Save Changes</button>
+                    <button type="button" class="secondary"
+                        onclick="viewProfile('${escapeHTML(p.id)}')">Cancel</button>
+                </div>
+            </form>
+        `;
+    } catch (error) {
+        v.innerHTML = `
+            <div class="notice">${escapeHTML(error.message)}</div>
+            <button type="button" class="secondary" onclick="go('profiles')">Back to Profiles</button>
+        `;
+    }
+}
+
+async function saveProfileChanges(e, profileId) {
+    e.preventDefault();
+    const form = e.target;
+    if (form.dataset.submitting === 'true') return;
+
+    form.dataset.submitting = 'true';
+    const button = form.querySelector('button[type="submit"]');
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Saving Changes...';
+    }
+
+    const payload = Object.fromEntries(new FormData(form));
+    payload.age = payload.age === '' ? null : Number(payload.age);
+    payload.salary_lpa = payload.salary_lpa === '' ? null : Number(payload.salary_lpa);
+
+    // Only admins may submit verification and marriage status fields.
+    if (user?.role !== 'admin') {
+        delete payload.verification_status;
+        delete payload.marriage_status;
+    }
+        try {
+        await api('/api/profiles/' + encodeURIComponent(profileId), {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+        notice('Profile updated successfully.');
+        await viewProfile(profileId);
+    } catch (error) {
+        notice('Could not update profile: ' + error.message);
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'Save Changes';
+        }
+    } finally {
+        form.dataset.submitting = 'false';
+    }
+}
+
 
 async function goToPhotoUpload(profileId) {
     page = 'upload';
@@ -1457,7 +1610,7 @@ async function downloadSharingPNG() {
 
     try {
         button.disabled = true;
-        button.textContent = 'Creating PNG...';
+                button.textContent = 'Creating PNG...';
 
         const canvas = await html2canvas(card, {
             scale: 2,

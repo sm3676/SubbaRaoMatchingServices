@@ -70,6 +70,30 @@ class ProfileIn(BaseModel):
     notes: Optional[str] = None
 
 
+class ProfileUpdateIn(BaseModel):
+    gender: Optional[str] = None
+    full_name: Optional[str] = None
+    age: Optional[int] = Field(default=None, ge=18, le=100)
+    height: Optional[str] = None
+    location: Optional[str] = None
+    gothram: Optional[str] = None
+    star: Optional[str] = None
+    education: Optional[str] = None
+    job: Optional[str] = None
+    salary_lpa: Optional[float] = Field(default=None, ge=0)
+    phone: Optional[str] = None
+    source_group: Optional[str] = None
+    source_sender: Optional[str] = None
+    source_date: Optional[str] = None
+    notes: Optional[str] = None
+    verification_status: Optional[str] = None
+    marriage_status: Optional[str] = None
+
+
+class BulkProfilesIn(BaseModel):
+    profiles: list[ProfileIn] = Field(min_length=1, max_length=20)
+
+
 class MatchIn(BaseModel):
     profile_id: str
     criteria: list[str]
@@ -605,154 +629,455 @@ def profile_detail(profile_id: str, user=Depends(current_user)):
 
 
 # --------------------------------------------------
-# CREATE PROFILE + DUPLICATE PROTECTION
+# COMMON PROFILE CREATION + DUPLICATE PROTECTION
 # --------------------------------------------------
 
-@app.post("/api/profiles")
-def create_profile(data: ProfileIn, user=Depends(current_user)):
-    if data.gender not in ("Male", "Female"):
-        raise HTTPException(400, "Gender must be Male or Female")
-
-    d = data.model_dump()
+def find_duplicate_profile(data, exclude_profile_id=None):
     duplicate = None
 
-    if d.get("phone"):
-        found = (
+    phone = data.get("phone")
+    full_name = data.get("full_name")
+    age = data.get("age")
+    gender = data.get("gender")
+
+    if phone:
+        query = (
             admin_client.table("profiles")
-            .select("id,profile_code,full_name")
-            .eq("phone", d["phone"])
-            .limit(1)
-            .execute()
-            .data
+            .select("id,profile_code,full_name,age,gender")
+            .eq("phone", phone)
         )
+
+        if exclude_profile_id:
+            query = query.neq("id", exclude_profile_id)
+
+        found = query.limit(1).execute().data or []
 
         if found:
             duplicate = found[0]
 
-    if not duplicate and d.get("full_name") and d.get("age"):
-        found = (
+    if not duplicate and full_name and age and gender:
+        query = (
             admin_client.table("profiles")
-            .select("id,profile_code,full_name")
-            .ilike("full_name", d["full_name"])
-            .eq("age", d["age"])
-            .eq("gender", d["gender"])
-            .limit(1)
-            .execute()
-            .data
+            .select("id,profile_code,full_name,age,gender")
+            .ilike("full_name", full_name.strip())
+            .eq("age", age)
+            .eq("gender", gender)
         )
+
+        if exclude_profile_id:
+            query = query.neq("id", exclude_profile_id)
+
+        found = query.limit(1).execute().data or []
 
         if found:
             duplicate = found[0]
+
+    return duplicate
+
+
+def record_profile_submission(profile_id, user_id, data, is_first):
+    source_group = data.get("source_group")
+    source_sender = data.get("source_sender")
+
+    existing_query = (
+        admin_client.table("profile_submissions")
+        .select("id")
+        .eq("profile_id", profile_id)
+        .eq("user_id", user_id)
+    )
+
+    if source_group is None:
+        existing_query = existing_query.is_("source_group", "null")
+    else:
+        existing_query = existing_query.eq("source_group", source_group)
+
+    if source_sender is None:
+        existing_query = existing_query.is_("source_sender", "null")
+    else:
+        existing_query = existing_query.eq("source_sender", source_sender)
+
+    existing = existing_query.limit(1).execute().data or []
+
+    if existing:
+        return
+
+    admin_client.table("profile_submissions").insert({
+        "profile_id": profile_id,
+        "user_id": user_id,
+        "source_group": source_group,
+        "source_sender": source_sender,
+        "is_first": is_first,
+    }).execute()
+
+
+def create_profile_common(data, user):
+    """
+    Shared creation logic for manual and bulk profile creation.
+    Both use identical validation, duplicate checking,
+    submission history and audit logging.
+    """
+
+    d = dict(data)
+
+    # Normalize text values.
+    for field in (
+        "full_name",
+        "height",
+        "location",
+        "gothram",
+        "star",
+        "education",
+        "job",
+        "phone",
+        "source_group",
+        "source_sender",
+        "source_date",
+        "notes",
+    ):
+        if isinstance(d.get(field), str):
+            d[field] = d[field].strip() or None
+
+    if d.get("gender") not in ("Male", "Female"):
+        raise ValueError("Gender must be Male or Female")
+
+    if d.get("age") is not None and not 18 <= d["age"] <= 100:
+        raise ValueError("Age must be between 18 and 100")
+
+    if d.get("salary_lpa") is not None and d["salary_lpa"] < 0:
+        raise ValueError("Salary cannot be negative")
+
+    duplicate = find_duplicate_profile(d)
 
     if duplicate:
-        existing_query = (
-            admin_client.table("profile_submissions")
-            .select("id")
-            .eq("profile_id", duplicate["id"])
-            .eq("user_id", user["id"])
+        record_profile_submission(
+            duplicate["id"],
+            user["id"],
+            d,
+            is_first=False,
         )
 
-        if d.get("source_group") is None:
-            existing_query = existing_query.is_("source_group", "null")
-        else:
-            existing_query = existing_query.eq(
-                "source_group", d["source_group"]
-            )
-
-        if d.get("source_sender") is None:
-            existing_query = existing_query.is_("source_sender", "null")
-        else:
-            existing_query = existing_query.eq(
-                "source_sender", d["source_sender"]
-            )
-
-        existing = existing_query.limit(1).execute().data
-
-        if not existing:
-            admin_client.table("profile_submissions").insert({
-                "profile_id": duplicate["id"],
-                "user_id": user["id"],
-                "source_group": d.get("source_group"),
-                "source_sender": d.get("source_sender"),
-                "is_first": False,
-            }).execute()
-
-            audit(user["id"], "duplicate_profile_submitted", {
-                "profile_id": duplicate["id"],
-                "original_submitter_preserved": True,
-            })
-
-        raise HTTPException(409, detail={
-            "message": (
-                "Possible duplicate profile. "
-                "Original submitter preserved."
-            ),
-            "duplicate": duplicate,
+        audit(user["id"], "duplicate_profile_submitted", {
+            "profile_id": duplicate["id"],
+            "original_submitter_preserved": True,
         })
 
+        return {
+            "status": "duplicate",
+            "duplicate": duplicate,
+        }
+
+    # Same defaults for manual and bulk profiles.
     d.update({
         "first_submitted_by": user["id"],
         "verification_status": "pending",
         "marriage_status": "available",
     })
 
-    created = (
+    inserted = (
         admin_client.table("profiles")
         .insert(d)
-        .execute()
-        .data[0]
-    )
-
-    admin_client.table("profile_submissions").insert({
-        "profile_id": created["id"],
-        "user_id": user["id"],
-        "source_group": d.get("source_group"),
-        "source_sender": d.get("source_sender"),
-        "is_first": True,
-    }).execute()
-
-    audit(user["id"], "profile_created", {
-        "profile_id": created["id"],
-        "profile_code": created["profile_code"],
-    })
-
-    return created
-
-
-# --------------------------------------------------
-# UPDATE PROFILE
-# --------------------------------------------------
-
-@app.patch("/api/profiles/{profile_id}")
-def update_profile(profile_id: str, payload: dict, user=Depends(current_user)):
-    allowed = {
-        "full_name", "age", "height", "location", "gothram", "star",
-        "education", "job", "salary_lpa", "phone", "notes",
-        "verification_status", "marriage_status",
-    }
-
-    patch = {k: v for k, v in payload.items() if k in allowed}
-
-    if not patch:
-        raise HTTPException(400, "No editable fields supplied")
-
-    if any(k in patch for k in ("verification_status", "marriage_status")):
-        require_admin(user)
-
-    result = (
-        admin_client.table("profiles")
-        .update(patch)
-        .eq("id", profile_id)
         .execute()
         .data
     )
 
-    audit(user["id"], "profile_updated", {
-        "profile_id": profile_id,
-        "fields": list(patch),
+    if not inserted:
+        raise RuntimeError("Profile creation failed")
+
+    created = inserted[0]
+
+    record_profile_submission(
+        created["id"],
+        user["id"],
+        d,
+        is_first=True,
+    )
+
+    audit(user["id"], "profile_created", {
+        "profile_id": created["id"],
+        "profile_code": created.get("profile_code"),
+        "creation_type": "common",
     })
 
-    return result
+    return {
+        "status": "created",
+        "profile": created,
+    }
+
+
+# --------------------------------------------------
+# CREATE PROFILE - MANUAL
+# --------------------------------------------------
+
+@app.post("/api/profiles")
+def create_profile(data: ProfileIn, user=Depends(current_user)):
+    try:
+        result = create_profile_common(
+            data.model_dump(),
+            user,
+        )
+
+        if result["status"] == "duplicate":
+            raise HTTPException(409, detail={
+                "message": (
+                    "Possible duplicate profile. "
+                    "Original submitter preserved."
+                ),
+                "duplicate": result["duplicate"],
+            })
+
+        return result["profile"]
+
+    except HTTPException:
+        raise
+
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
+    except Exception:
+        raise HTTPException(
+            500,
+            "Could not create profile. Please try again."
+        )
+
+
+# --------------------------------------------------
+# BULK CREATE PROFILES - ADMIN ONLY (MAX 20)
+# --------------------------------------------------
+
+@app.post("/api/profiles/bulk")
+def bulk_create_profiles(
+    payload: BulkProfilesIn,
+    user=Depends(current_user),
+):
+    require_admin(user)
+
+    results = []
+    created_count = 0
+    duplicate_count = 0
+    failed_count = 0
+
+    for index, profile in enumerate(payload.profiles, start=1):
+        d = profile.model_dump()
+
+        try:
+            # Do not overwrite source information supplied
+            # with the bulk profile.
+            #
+            # If no source is supplied, use a clear bulk-import
+            # default instead of forcing TEST DATA.
+            if not d.get("source_group"):
+                d["source_group"] = "BULK IMPORT"
+
+            if not d.get("source_sender"):
+                d["source_sender"] = "Bulk Import"
+
+            result = create_profile_common(d, user)
+
+            if result["status"] == "duplicate":
+                duplicate_count += 1
+
+                duplicate = result["duplicate"]
+
+                results.append({
+                    "row": index,
+                    "name": d.get("full_name"),
+                    "status": "duplicate_skipped",
+                    "existing_profile_code": duplicate.get("profile_code"),
+                })
+
+                continue
+
+            created = result["profile"]
+            created_count += 1
+
+            results.append({
+                "row": index,
+                "name": created.get("full_name"),
+                "profile_code": created.get("profile_code"),
+                "status": "created",
+            })
+
+        except Exception as exc:
+            failed_count += 1
+
+            results.append({
+                "row": index,
+                "name": d.get("full_name"),
+                "status": "failed",
+                "message": str(exc)[:250],
+            })
+
+    return {
+        "message": "Bulk profile processing completed",
+        "total_received": len(payload.profiles),
+        "created": created_count,
+        "duplicates_skipped": duplicate_count,
+        "failed": failed_count,
+        "results": results,
+    }
+
+
+
+# --------------------------------------------------
+# UPDATE PROFILE - EDIT PROFILE
+# --------------------------------------------------
+
+@app.patch("/api/profiles/{profile_id}")
+def update_profile(
+    profile_id: str,
+    payload: ProfileUpdateIn,
+    user=Depends(current_user),
+):
+    patch = payload.model_dump(exclude_unset=True)
+
+    if not patch:
+        raise HTTPException(400, "No editable fields supplied")
+
+    allowed_fields = {
+        "gender",
+        "full_name",
+        "age",
+        "height",
+        "location",
+        "gothram",
+        "star",
+        "education",
+        "job",
+        "salary_lpa",
+        "phone",
+        "source_group",
+        "source_sender",
+        "source_date",
+        "notes",
+        "verification_status",
+        "marriage_status",
+    }
+
+    if not set(patch).issubset(allowed_fields):
+        raise HTTPException(400, "Unsupported profile field")
+
+    # Normalize text values.
+    for field, value in patch.items():
+        if isinstance(value, str):
+            patch[field] = value.strip() or None
+
+    # Validate gender.
+    if "gender" in patch and patch["gender"] not in ("Male", "Female"):
+        raise HTTPException(400, "Gender must be Male or Female")
+
+    # Validate age.
+    if "age" in patch and patch["age"] is not None:
+        if not 18 <= patch["age"] <= 100:
+            raise HTTPException(400, "Age must be between 18 and 100")
+
+    # Validate salary.
+    if "salary_lpa" in patch and patch["salary_lpa"] is not None:
+        if patch["salary_lpa"] < 0:
+            raise HTTPException(400, "Salary cannot be negative")
+
+    # Only admin can change these fields.
+    admin_fields = {
+        "verification_status",
+        "marriage_status",
+    }
+
+    if admin_fields.intersection(patch):
+        require_admin(user)
+
+    # Fetch existing profile.
+    existing_rows = (
+        admin_client.table("profiles")
+        .select(
+            "id,profile_code,full_name,age,gender,phone"
+        )
+        .eq("id", profile_id)
+        .limit(1)
+        .execute()
+        .data
+        or []
+    )
+
+    if not existing_rows:
+        raise HTTPException(404, "Profile not found")
+
+    existing = existing_rows[0]
+
+    # Check duplicates only when identity information changes.
+    identity_fields = {
+        "phone",
+        "full_name",
+        "age",
+        "gender",
+    }
+
+    if identity_fields.intersection(patch):
+        duplicate_check_data = {
+            "phone": patch.get("phone", existing.get("phone")),
+            "full_name": patch.get(
+                "full_name",
+                existing.get("full_name"),
+            ),
+            "age": patch.get("age", existing.get("age")),
+            "gender": patch.get("gender", existing.get("gender")),
+        }
+
+        duplicate = find_duplicate_profile(
+            duplicate_check_data,
+            exclude_profile_id=profile_id,
+        )
+
+        if duplicate:
+            raise HTTPException(
+                409,
+                detail={
+                    "message": (
+                        "These details match another existing profile. "
+                        "Profile was not updated."
+                    ),
+                    "duplicate": duplicate,
+                },
+            )
+
+    # Update profile.
+    try:
+        result = (
+            admin_client.table("profiles")
+            .update(patch)
+            .eq("id", profile_id)
+            .execute()
+            .data
+            or []
+        )
+
+    except Exception:
+        raise HTTPException(
+            400,
+            "Profile update failed. Please verify the submitted fields."
+        )
+
+    if not result:
+        raise HTTPException(
+            400,
+            "Profile update could not be confirmed"
+        )
+
+    updated_profile = result[0]
+
+    # Audit log.
+    audit(
+        user["id"],
+        "profile_updated",
+        {
+            "profile_id": profile_id,
+            "profile_code": existing.get("profile_code"),
+            "fields": list(patch.keys()),
+        },
+    )
+
+    return {
+        "message": "Profile updated successfully",
+        "profile": updated_profile,
+    }
 
 
 # --------------------------------------------------
