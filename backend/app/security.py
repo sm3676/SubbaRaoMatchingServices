@@ -1,8 +1,12 @@
 
+import logging
+
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from supabase import create_client
 from .config import settings
+
+logger = logging.getLogger("uvicorn.error")
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -12,7 +16,7 @@ admin_client = create_client(
     settings.supabase_service_role_key
 )
 
-# Public client: login and other public Supabase operations
+# Public client: login and public Supabase operations
 public_client = create_client(
     settings.supabase_url,
     settings.supabase_anon_key
@@ -28,8 +32,6 @@ async def current_user(
     jwt = credentials.credentials
 
     try:
-        # Create an isolated client to verify this user's JWT.
-        # Do not use the shared admin_client for user authentication.
         auth_client = create_client(
             settings.supabase_url,
             settings.supabase_anon_key
@@ -41,7 +43,6 @@ async def current_user(
         if not auth_user:
             raise ValueError("No authenticated user")
 
-        # Use the admin client only for the database lookup.
         result = (
             admin_client.table("user_profiles")
             .select("id,full_name,role,active,language")
@@ -67,7 +68,12 @@ async def current_user(
     except HTTPException:
         raise
 
-    except Exception:
+    except Exception as exc:
+        logger.error(
+            "Supabase user verification failed: %s: %s",
+            type(exc).__name__,
+            str(exc)
+        )
         raise HTTPException(401, "Invalid or expired session")
 
 
