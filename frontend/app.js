@@ -10,6 +10,19 @@ let lang = localStorage.getItem('mm_lang') || 'en';
 let page = 'dashboard';
 let allProfiles = [];
 
+const supabaseAuth = window.supabase.createClient(
+    window.APP_CONFIG.SUPABASE_URL,
+    window.APP_CONFIG.SUPABASE_ANON_KEY,
+    {
+        auth: {
+            flowType: 'pkce',
+            autoRefreshToken: false,
+            persistSession: true,
+            detectSessionInUrl: false
+        }
+    }
+);
+
 const words = {
     en: {
         dashboard: 'Dashboard', profiles: 'Profiles',
@@ -189,6 +202,7 @@ async function signin(e) {
 }
 
 
+
 async function forgotPassword(e) {
     if (e) e.preventDefault();
 
@@ -199,18 +213,26 @@ async function forgotPassword(e) {
     }
 
     try {
-        await api('/api/auth/password-recovery', {
-            method: 'POST',
-            body: JSON.stringify({ email })
-        });
+        const { error } = await supabaseAuth.auth.resetPasswordForEmail(
+            email,
+            {
+                redirectTo: window.location.origin + window.location.pathname
+            }
+        );
+
+        if (error) {
+            throw error;
+        }
 
         notice(
             'If an account exists for this email, a password recovery link has been sent. Please check your inbox.'
         );
+
     } catch (error) {
-        notice(error.message);
+        notice(error.message || 'Unable to send recovery email. Please try again.');
     }
 }
+
 
 
 function showPasswordReset() {
@@ -301,51 +323,125 @@ async function updatePassword(e) {
 }
 
 
-function checkPasswordRecovery() {
-    const hash = window.location.hash;
 
-    if (!hash) return false;
+async function checkPasswordRecovery() {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
 
-    const params = new URLSearchParams(hash.substring(1));
+    // New Supabase PKCE recovery flow
+    if (code) {
+        try {
+            const { data, error } =
+                await supabaseAuth.auth.exchangeCodeForSession(code);
 
-    if (params.get('type') === 'recovery') {
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
+            if (error) {
+                throw error;
+            }
 
-        if (!accessToken || !refreshToken) {
-            notice('Recovery link is incomplete. Please request a new link.');
-            return false;
+            if (!data.session) {
+                throw new Error('Recovery session could not be created.');
+            }
+
+            recoverySession = {
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token
+            };
+
+            // Remove the recovery code from the browser address bar.
+            url.searchParams.delete('code');
+            history.replaceState(
+                null,
+                document.title,
+                url.pathname + url.search
+            );
+
+            showPasswordReset();
+            return true;
+
+        } catch (error) {
+            url.searchParams.delete('code');
+            history.replaceState(
+                null,
+                document.title,
+                url.pathname + url.search
+            );
+
+            notice(
+                'Recovery link is invalid or expired. Please request a new recovery email.'
+            );
+            return true;
         }
-
-        recoverySession = {
-            access_token: accessToken,
-            refresh_token: refreshToken
-        };
-
-        // Remove sensitive tokens from the browser address bar.
-        history.replaceState(
-            null,
-            document.title,
-            window.location.pathname + window.location.search
-        );
-
-        showPasswordReset();
-        return true;
     }
 
-    if (params.has('error')) {
+    // Handle recovery errors returned by Supabase.
+    if (
+        url.searchParams.has('error') ||
+        url.searchParams.has('error_code')
+    ) {
         const errorDescription =
-            params.get('error_description') ||
-            params.get('error_code') ||
+            url.searchParams.get('error_description') ||
+            url.searchParams.get('error_code') ||
             'Recovery link is invalid or expired.';
+
+        url.searchParams.delete('error');
+        url.searchParams.delete('error_code');
+        url.searchParams.delete('error_description');
 
         history.replaceState(
             null,
             document.title,
-            window.location.pathname + window.location.search
+            url.pathname + url.search
         );
 
         notice(errorDescription);
+        return true;
+    }
+
+    // Backward compatibility with older hash-based recovery links.
+    const hash = window.location.hash;
+
+    if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+
+        if (params.get('type') === 'recovery') {
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+
+            if (!accessToken || !refreshToken) {
+                notice('Recovery link is incomplete. Please request a new link.');
+                return true;
+            }
+
+            recoverySession = {
+                access_token: accessToken,
+                refresh_token: refreshToken
+            };
+
+            history.replaceState(
+                null,
+                document.title,
+                url.pathname + url.search
+            );
+
+            showPasswordReset();
+            return true;
+        }
+
+        if (params.has('error')) {
+            notice(
+                params.get('error_description') ||
+                params.get('error_code') ||
+                'Recovery link is invalid or expired.'
+            );
+
+            history.replaceState(
+                null,
+                document.title,
+                url.pathname + url.search
+            );
+
+            return true;
+        }
     }
 
     return false;
@@ -1681,6 +1777,11 @@ async function match() {
 // START APPLICATION
 // --------------------------------------------------
 
-if (!checkPasswordRecovery()) {
-    boot();
-}
+
+(async function startApp() {
+    const isRecovery = await checkPasswordRecovery();
+
+    if (!isRecovery) {
+        boot();
+    }
+})();
