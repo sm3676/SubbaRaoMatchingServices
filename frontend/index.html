@@ -1,32 +1,147 @@
-
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <meta name="theme-color" content="#f7f1e6">
-    <meta name="description" content="Subba Rao Matching Services - Tradition, Trust and Togetherness">
-
-    <title>Subba Rao Matching Services</title>
-
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <main id="app">
-        <p>Loading…</p>
-    </main>
-
-    <script src="config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- PNG generation library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <!-- PDF generation library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
-
-    <!-- Main application -->
-    <script src="app.js"></script>
-</body>
-</html>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Subba Rao Matchmaking Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--card:#f5f4f0;--ink:#2b2a25;--mut:#6b6a63;--line:#e3e1da;--btn:#2b2a25;--btnt:#fff;--acc:#623a52;--accbg:#ede6ea;--ok:#e6efe6;--okt:#3d6a43;--red:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1b19;--card:#2a2926;--ink:#f1efe9;--mut:#a9a79e;--line:#3a3935;--btn:#f1efe9;--btnt:#1c1b19;--acc:#d9a8c4;--accbg:#3a2d36;--ok:#26382a;--okt:#a8d5ae;--red:#f2b8b5}}
+:root[data-theme="dark"]{--bg:#1c1b19;--card:#2a2926;--ink:#f1efe9;--mut:#a9a79e;--line:#3a3935;--btn:#f1efe9;--btnt:#1c1b19;--acc:#d9a8c4;--accbg:#3a2d36;--ok:#26382a;--okt:#a8d5ae;--red:#f2b8b5}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 system-ui,sans-serif}
+.w{max-width:1000px;margin:0 auto;padding:22px 18px 60px}
+h1,h2,h3{font-family:Lora,Georgia,serif;font-weight:400;margin:0}
+h1{font-size:30px}h2{font-size:26px;margin:18px 0 14px}h3{font-size:22px}
+.m{color:var(--mut)}a.b{color:var(--acc);cursor:pointer;display:inline-block;margin-bottom:6px;padding:6px 0}
+.g{display:grid;gap:16px}.g2{grid-template-columns:1fr 1fr}
+@media(max-width:700px){.g2{grid-template-columns:1fr}}
+.c{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+.home{min-height:200px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;text-align:left;color:inherit;font:inherit}
+.home p{margin:6px 0 0;color:var(--mut)}
+.btn{background:var(--btn);color:var(--btnt);border:0;border-radius:12px;padding:14px 20px;font:inherit;cursor:pointer;min-height:48px}
+.btn.p{background:var(--acc);color:#fff}.btn.o{background:none;color:var(--ink);border:1px solid var(--line)}.btn.r{background:none;color:var(--red);border:1px solid var(--red)}
+input,select{width:100%;box-sizing:border-box;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;min-height:48px}
+label{display:block;font-size:14px;color:var(--mut);margin:10px 0 4px}
+.pc{display:flex;gap:14px;align-items:center;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:12px;cursor:pointer;color:inherit;font:inherit}
+.av{width:56px;height:56px;border-radius:12px;background:var(--accbg);color:var(--acc);display:flex;align-items:center;justify-content:center;font:22px Lora,Georgia,serif;flex:none;overflow:hidden}
+.av img,.big img{width:100%;height:100%;object-fit:cover}
+.pc .t{flex:1;min-width:0}.pc .r2{text-align:right;font-size:14px;color:var(--mut)}
+.pa{color:var(--acc);font-size:15px}
+.bd{background:var(--ok);color:var(--okt);border-radius:20px;padding:6px 14px;font-size:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.tg{display:flex;background:var(--card);border-radius:12px;padding:4px}
+.tg button{border:0;background:none;color:var(--mut);padding:10px 20px;border-radius:9px;font:inherit;cursor:pointer}
+.tg .on{background:var(--acc);color:#fff}
+.big{background:var(--bg);border:1px solid var(--line);border-radius:14px;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;color:var(--mut);overflow:hidden;max-height:480px;margin:0 auto}
+.th{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}.th img{width:60px;height:60px;object-fit:cover;border-radius:10px;cursor:pointer;border:2px solid transparent}.th img.on{border-color:var(--acc)}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}@media(max-width:700px){.dl{grid-template-columns:1fr}}
+.dl div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.dl span:first-child{color:var(--mut);font-size:15px}.dl span:last-child{text-align:right}
+.md{position:fixed;inset:0;background:rgba(0,0,0,.5);overflow:auto;padding:12px;z-index:5}
+.md>div{background:var(--bg);max-width:900px;margin:0 auto;border-radius:18px;padding:18px}
+#t{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--btn);color:var(--btnt);padding:12px 20px;border-radius:12px;z-index:9;display:none;max-width:90%}
+:root{--gold:#9a6a1c;--dot:#d9cdee;--bg2:#efe8fa}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--gold:#e0b45a;--dot:#352c4d;--bg2:#1f1a2e}}
+:root[data-theme="dark"]{--gold:#e0b45a;--dot:#352c4d;--bg2:#1f1a2e}
+body{background:radial-gradient(circle,var(--dot) 1.8px,transparent 2.3px) 0 0/30px 30px,linear-gradient(var(--bg2),var(--bg) 70%) fixed}
+#th{line-height:0}
+#th::before{content:"";display:block;height:8px;background:repeating-linear-gradient(90deg,#6b4aa3 0 16px,#c8942d 16px 22px)}
+#gl{line-height:0}
+:root{--glow:rgba(150,120,220,.2);--card:#fbf9ff;--acc:#5b3f8a;--accbg:#ebe5f5}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--glow:rgba(242,162,12,.08)}}
+:root[data-theme="dark"]{--glow:rgba(242,162,12,.08)}
+body{background:radial-gradient(ellipse 90% 45% at 50% 0,var(--glow),transparent),radial-gradient(circle,var(--dot) 1.4px,transparent 1.9px) 0 0/34px 34px,linear-gradient(var(--bg2),var(--bg) 70%) fixed}
+.fire{width:clamp(130px,30vw,200px);height:auto;aspect-ratio:160/120}
+.fl{transform-box:fill-box;transform-origin:50% 100%;animation:fk 1.1s ease-in-out infinite}
+@keyframes fk{0%,100%{transform:scale(1)}50%{transform:scale(.88,1.16)}}
+@media(prefers-reduced-motion:reduce){.fl{animation:none}}
+@keyframes sw{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+.lf{transform-box:fill-box;transform-origin:50% 0;animation:sw 3.4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.lf{animation:none}}
+.hero{display:flex;align-items:center;justify-content:center;gap:16px;text-align:center;margin:10px 0 0}
+.hero h1{font-size:clamp(26px,5vw,44px);color:var(--acc);line-height:1.15}
+.kal{width:clamp(66px,14vw,130px);height:auto;aspect-ratio:120/170;flex:none}
+.te{margin:0 0 4px;color:var(--gold);font-size:20px}
+.ic{width:54px;height:54px;margin-bottom:10px}
+.home{background:linear-gradient(135deg,var(--card),var(--accbg))}
+</style></head><body><div id="th"></div><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="kal" viewBox="0 0 120 170"><g fill="#3f7d3a" stroke="#2b5a2a" stroke-width="1"><path transform="translate(60 64) rotate(-62)" d="M0 0C9-10 10-34 0-56C-10-34-9-10 0 0Z"/><path transform="translate(60 64) rotate(-31)" d="M0 0C9-10 10-34 0-56C-10-34-9-10 0 0Z"/><path transform="translate(60 64) rotate(31)" d="M0 0C9-10 10-34 0-56C-10-34-9-10 0 0Z"/><path transform="translate(60 64) rotate(62)" d="M0 0C9-10 10-34 0-56C-10-34-9-10 0 0Z"/><path fill="#4f9145" transform="translate(60 64)" d="M0 0C9-10 10-34 0-56C-10-34-9-10 0 0Z"/></g><ellipse cx="60" cy="42" rx="17" ry="19" fill="#7a4a1e"/><path d="M51 27Q60 15 69 27" stroke="#a8742a" stroke-width="2" fill="none"/><g fill="#3b2410"><circle cx="55" cy="46" r="2"/><circle cx="65" cy="46" r="2"/><circle cx="60" cy="52" r="2"/></g><ellipse cx="60" cy="68" rx="24" ry="6" fill="#c98a1e"/><path d="M38 68L44 86H76L82 68Z" fill="#d99a2b"/><path d="M44 86C14 98 14 148 44 160H76C106 148 106 98 76 86Z" fill="#d99a2b"/><path d="M33 106C29 122 33 140 46 150" stroke="#f3c95a" stroke-width="4" fill="none"/><path d="M22 114Q60 128 98 114" stroke="#b3261e" stroke-width="6" fill="none"/><g fill="#fff3c4"><circle cx="32" cy="131" r="2.6"/><circle cx="46" cy="135" r="2.6"/><circle cx="60" cy="136" r="2.6"/><circle cx="74" cy="135" r="2.6"/><circle cx="88" cy="131" r="2.6"/></g><g fill="#f2a20c"><circle cx="42" cy="80" r="4.5"/><circle cx="51" cy="82" r="4.5"/><circle cx="60" cy="83" r="4.5"/><circle cx="69" cy="82" r="4.5"/><circle cx="78" cy="80" r="4.5"/></g><rect x="40" y="160" width="40" height="7" rx="3" fill="#b07a1a"/></symbol><symbol id="kal2" viewBox="0 0 120 170"><defs><linearGradient id="sv" x1="0" x2="1"><stop offset="0" stop-color="#a8741a"/><stop offset=".35" stop-color="#ffe08a"/><stop offset=".7" stop-color="#d9a82e"/><stop offset="1" stop-color="#8f5f12"/></linearGradient></defs><g stroke="#3f7d3a" stroke-width="1"><path transform="translate(60 78) rotate(-72)" fill="#5da04a" d="M0 0C16-6 18-28 0-46C-18-28-16-6 0 0Z"/><path transform="translate(60 78) rotate(-36)" fill="#6fb257" d="M0 0C16-6 18-28 0-46C-18-28-16-6 0 0Z"/><path transform="translate(60 78) rotate(36)" fill="#6fb257" d="M0 0C16-6 18-28 0-46C-18-28-16-6 0 0Z"/><path transform="translate(60 78) rotate(72)" fill="#5da04a" d="M0 0C16-6 18-28 0-46C-18-28-16-6 0 0Z"/><path transform="translate(60 78) rotate(-54)" fill="#c9c93d" d="M0 0C12-4 14-22 0-36C-14-22-12-4 0 0Z"/></g><circle cx="60" cy="52" r="21" fill="#c58f3b"/><path d="M60 31V40M48 36L52 44M72 36L68 44M42 48L50 52M78 48L70 52" stroke="#8a5a1c" stroke-width="2" stroke-linecap="round"/><path d="M54 33Q60 22 66 33" stroke="#a8742a" stroke-width="2.5" fill="none"/><path d="M44 56Q46 68 60 72" stroke="#e2b765" stroke-width="2" fill="none"/><ellipse cx="60" cy="78" rx="27" ry="6" fill="url(#sv)" stroke="#8f5f12"/><path d="M35 78Q60 92 85 78L77 100H43Z" fill="url(#sv)" stroke="#8f5f12"/><path d="M43 100C14 112 14 152 45 162H75C106 152 106 112 77 100Z" fill="url(#sv)" stroke="#8f5f12"/><path d="M24 134Q60 148 96 134" stroke="#8f5f12" stroke-width="1.5" fill="none"/><path d="M30 144Q60 157 90 144" stroke="#fff0b3" stroke-width="2" stroke-dasharray="1 5" stroke-linecap="round" fill="none"/><path d="M43 100Q60 108 77 100" stroke="#c1121f" stroke-width="3.5" fill="none"/><circle cx="60" cy="124" r="4" fill="#b3121a"/><circle cx="48" cy="124" r="2.5" fill="#fff3c4"/><circle cx="72" cy="124" r="2.5" fill="#fff3c4"/><circle cx="30" cy="158" r="8" fill="#c1121f"/><circle cx="30" cy="158" r="4" fill="#8f0d16"/><circle cx="46" cy="162" r="8" fill="#f2c230"/><circle cx="46" cy="162" r="3.5" fill="#d99a10"/><circle cx="74" cy="162" r="8" fill="#c1121f"/><circle cx="74" cy="162" r="4" fill="#8f0d16"/><circle cx="90" cy="158" r="8" fill="#f2c230"/><circle cx="90" cy="158" r="3.5" fill="#d99a10"/><g fill="#f58a07"><circle cx="40" cy="86" r="4.5"/><circle cx="56" cy="95" r="4.5"/><circle cx="72" cy="92" r="4.5"/></g><g fill="#c1121f"><circle cx="48" cy="92" r="4.5"/><circle cx="64" cy="95" r="4.5"/><circle cx="80" cy="86" r="4.5"/></g><circle cx="38" cy="66" r="5" fill="#f2c230"/><circle cx="82" cy="66" r="5" fill="#e0457b"/><circle cx="28" cy="82" r="5" fill="#c1121f"/><circle cx="92" cy="82" r="5" fill="#f58a07"/><g stroke="#fff" stroke-width="1"><circle cx="14" cy="160" r="7" fill="#e0457b"/><circle cx="106" cy="160" r="7" fill="#f58a07"/><circle cx="60" cy="167" r="6" fill="#fff" stroke="#d9d2c3"/><circle cx="37" cy="167" r="6" fill="#f58a07"/><circle cx="83" cy="167" r="6" fill="#e0457b"/><circle cx="20" cy="148" r="6" fill="#f2c230"/><circle cx="100" cy="148" r="6" fill="#c1121f"/></g></symbol><symbol id="fire" viewBox="0 0 160 120"><path d="M10 60H150L136 112H24Z" fill="#8a7a66"/><path d="M26 62H134L126 80H34Z" fill="#2a1d14"/><rect x="20" y="108" width="120" height="8" rx="2" fill="#6b3b1e"/><g transform="translate(58 80)"><g class="fl"><path d="M0 0C-10-14-4-26 0-38C4-26 10-14 0 0Z" fill="#f58a07"/><path d="M0 0C-5-8-2-14 0-20C2-14 5-8 0 0Z" fill="#ffd23f"/></g></g><g transform="translate(82 80)"><g class="fl" style="animation-delay:-.4s"><path d="M0 0C-13-18-5-34 0-52C5-34 13-18 0 0Z" fill="#f58a07"/><path d="M0 0C-6-10-3-18 0-28C3-18 6-10 0 0Z" fill="#ffd23f"/></g></g><g transform="translate(104 80)"><g class="fl" style="animation-delay:-.8s"><path d="M0 0C-9-12-3-22 0-32C3-22 9-12 0 0Z" fill="#f58a07"/><path d="M0 0C-4-7-2-12 0-17C2-12 4-7 0 0Z" fill="#ffd23f"/></g></g><path d="M34 80H126L130 88H30Z" fill="#a8977e"/><path d="M10 60H150" stroke="#cbb89a" stroke-width="3"/></symbol></defs></svg><div class="w" id="app"></div><div id="gl"></div><div id="t"></div>
+<script src="config.js"></script>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const RA="Mesha,Vrushabha,Mithuna,Karkataka,Simha,Kanya,Tula,Vruschika,Dhanu,Makara,Kumbha,Meena".split(","),
+ST="Ashwini,Bharani,Krittika,Rohini,Mrigashira,Ardra,Punarvasu,Pushya,Ashlesha,Magha,Purva Phalguni,Uttara Phalguni,Hasta,Chitra,Swati,Vishakha,Anuradha,Jyeshtha,Moola,Purva Ashadha,Uttara Ashadha,Shravana,Dhanishta,Shatabhisha,Purva Bhadrapada,Uttara Bhadrapada,Revati".split(","),
+LOC=["Hyderabad","Bangalore","Kurnool","Others"],JOB=["Software Engineer","Doctor","CA","Others"],
+AG=[["20–23",20,23],["24–26",24,26],["27–30",27,30],["31–33",31,33],["34+",34,99]];
+const F=[["name","Name"],["gender","Gender",["Woman","Man"]],["dob","Date of birth",0,"date"],["age","Age",0,"number"],["height","Height"],["locG","Location",LOC],["city","City (if Others)"],["jobG","Job type",JOB],["job","Job title"],["salary","Salary (₹ lakh / year)",0,"number"],["tob","Time of birth",0,"time"],["rashi","Rashi",RA],["star","Nakshatra",ST],["gothram","Gothram"],["mg","Maternal gothram"],["complexion","Complexion"],["education","Education"],["caste","Caste"],["siblings","Siblings"],["father","Father’s name"]];
+const seed=[
+{id:1,name:"Ananya R.",gender:"Woman",age:27,locG:"Hyderabad",jobG:"Software Engineer",job:"Software engineer",salary:12,gothram:"Bharadwaja",star:"Rohini",education:"B.Tech",chat:"Lakshmi group",rcv:"2026-11-01",photos:[]},
+{id:2,name:"Priya S.",gender:"Woman",age:26,locG:"Others",city:"Chennai",jobG:"Others",job:"Architect",salary:9,gothram:"Kashyapa",star:"Rohini",education:"B.Arch",chat:"Suresh group",rcv:"2026-11-03",photos:[]},
+{id:3,name:"Divya K.",gender:"Woman",age:29,locG:"Kurnool",jobG:"CA",job:"Chartered accountant",salary:15,gothram:"Vasishta",star:"Anuradha",education:"CA",chat:"Family friends",rcv:"2026-11-05",photos:[]},
+{id:4,name:"Rahul M.",gender:"Man",age:28,locG:"Bangalore",jobG:"Doctor",job:"Doctor, MD",salary:30,gothram:"Kaushika",star:"Hasta",education:"MBBS, MD",chat:"Lakshmi group",rcv:"2026-11-06",photos:[]}];
+function gen(){const W="Sravani,Keerthi,Lavanya,Meghana,Harika,Navya,Sindhu,Pooja,Swathi,Bhavana".split(","),Mn="Karthik,Vamsi,Sai,Arjun,Praneeth,Naveen,Harsha,Teja,Srikanth,Varun".split(","),L="Reddy,Rao,Sharma,Gupta,Setty,Naidu,Murthy,Varma,Kumar,Prasad".split(","),G="Bharadwaja,Kashyapa,Vasishta,Kaushika,Atreya,Gautama,Srivatsa,Kondinya".split(","),CH=["Lakshmi group","Suresh group","Family friends","PSR group"],OC=["Pune","Chennai","Vijayawada","Warangal","Mumbai"],ED=["B.Tech","MBA","M.Tech","B.Com","MS","MBBS"],JT={"Software Engineer":["Software engineer, Infosys","Senior software engineer, TCS","Developer, Amazon"],Doctor:["MBBS doctor","Dentist","Resident doctor, MD"],CA:["Chartered accountant","CA, Deloitte","CA, own practice"],Others:["Teacher","Bank manager","Architect","Business owner"]};return Array.from({length:20},(_,i)=>{const w=i%2==0,jg=JOB[(i*3+1)%4],lg=LOC[(i+1)%4];return{id:i+5,name:(w?W:Mn)[i>>1]+" "+L[(i*3)%10][0]+".",gender:w?"Woman":"Man",age:22+(i*7)%15,height:w?`5'${i%7}"`:`5'${6+i%6}"`,locG:lg,city:lg=="Others"?OC[i%5]:"",jobG:jg,job:JT[jg][i%JT[jg].length],salary:6+(i*5)%30,gothram:G[i%8],star:ST[(i*5)%27],rashi:RA[(i*7)%12],education:ED[i%6],caste:"Arya Vysya",chat:CH[i%4],rcv:"2026-11-0"+(1+i%8),photos:[]}})}
+let P=[];
+let token=sessionStorage.getItem('mm_token')||localStorage.getItem('mm_token')||'';
+const apiBase=window.APP_CONFIG.API_BASE;
+async function api(path,opts={}){const r=await fetch(apiBase+path,{...opts,headers:{...(token?{Authorization:'Bearer '+token}:{}),...(opts.body instanceof FormData?{}:{'Content-Type':'application/json'}),...(opts.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(typeof d.detail==='string'?d.detail:(d.detail?.message||'Request failed'));return d}
+const sv=()=>{}; // Changes are saved to the cloud through explicit API calls.
+function fromCloud(p){let extra={};try{extra=JSON.parse(p.notes||"{}").prototype||{}}catch{}return {...extra,id:p.id,name:p.full_name||'',gender:p.gender==='Female'?'Woman':'Man',age:p.age||'',height:p.height||'',locG:['Hyderabad','Bangalore','Kurnool'].includes(p.location)?p.location:'Others',city:['Hyderabad','Bangalore','Kurnool'].includes(p.location)?'':(p.location||''),jobG:classJob(p.job),job:p.job||'',salary:p.salary_lpa??'',gothram:p.gothram||'',star:p.star||'',education:p.education||'',chat:p.source_group||'',rcv:p.source_date||'',photos:[],notes:p.notes||''}}
+function classJob(j){j=(j||'').toLowerCase();return j.includes('software')||j.includes('developer')?'Software Engineer':j.includes('doctor')||j.includes('physician')?'Doctor':j.includes('accountant')||j==='ca'?'CA':'Others'}
+function toCloud(p){const loc=p.locG==='Others'?p.city:p.locG;const n=parseInt(p.age,10),s=parseFloat(p.salary);return {full_name:p.name,gender:p.gender==='Woman'?'Female':'Male',age:Number.isFinite(n)?n:null,height:p.height||null,location:loc||null,job:p.job||p.jobG||null,salary_lpa:Number.isFinite(s)?s:null,gothram:p.gothram||null,star:p.star||null,education:p.education||null,source_group:p.chat||null,source_date:p.rcv||null,notes:JSON.stringify({prototype:{dob:p.dob,tob:p.tob,rashi:p.rashi,mg:p.mg,complexion:p.complexion,caste:p.caste,siblings:p.siblings,father:p.father}})}}
+async function loadProfiles(){const rows=await api('/api/profiles');P=rows.map(fromCloud);render()}
+async function loadPhotos(p){const data=await api('/api/profiles/'+encodeURIComponent(p.id)+'/images');p.photos=(data.images||[]).filter(x=>x.url).map(x=>x.url);pr()}
+async function uploadPhotos(p,files){for(const file of files){const f=new FormData();f.append('profile_id',p.id);f.append('file',file,file.name);await api('/api/intake/image',{method:'POST',body:f})}}
+function loginView(){document.querySelector('#app').innerHTML=`<div class="c" style="max-width:430px;margin:12vh auto"><h1>Subba Rao Matchmaking Services</h1><p class="m">Sign in to your private workspace</p><form id="loginForm"><label>Email</label><input id="loginEmail" type="email" required autocomplete="username"><label>Password</label><input id="loginPassword" type="password" required autocomplete="current-password"><button class="btn p" style="width:100%;margin-top:18px">Sign in</button></form><p id="loginError" class="m"></p></div>`}
+async function start(){if(!token){loginView();return}try{await loadProfiles()}catch(e){token='';sessionStorage.removeItem('mm_token');localStorage.removeItem('mm_token');loginView();document.querySelector('#loginError').textContent='Please sign in again.'}}
+document.addEventListener('submit',async e=>{if(e.target.id!=='loginForm')return;e.preventDefault();const err=document.querySelector('#loginError');try{const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:document.querySelector('#loginEmail').value,password:document.querySelector('#loginPassword').value})});token=d.access_token;sessionStorage.setItem('mm_token',token);await loadProfiles()}catch(ex){err.textContent=ex.message}});
+let V={v:"home"},M={g:"Woman",loc:"",age:"",job:"",q:"",done:0},Q="",E=0,S=0,D=0,N=null;
+function toast(m){const t=$("#t");t.textContent=m;t.style.display="block";clearTimeout(t.h);t.h=setTimeout(()=>t.style.display="none",3500)}
+const age=p=>{if(p.dob){const d=new Date(p.dob),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate()))a--;return isNaN(a)?p.age:a}return p.age},
+loc=p=>p.locG=="Others"?(p.city||"Others"):(p.locG||p.city||""),
+ini=n=>(n||"?").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase(),
+blob=p=>[p.name,p.gender,age(p),loc(p),p.jobG,p.job,p.salary,p.dob,p.tob,p.rashi,p.star,p.gothram,p.mg,p.complexion,p.education,p.caste,p.siblings,p.father,p.height,p.chat].join(" ").toLowerCase(),
+hit=(p,q)=>q.toLowerCase().split(/\s+/).filter(Boolean).every(w=>blob(p).includes(w));
+function card(p){return `<button class="pc" data-id="${p.id}"><div class="av">${p.photos[0]?`<img src="${p.photos[0]}" alt="">`:ini(p.name)}</div><div class="t"><b>${esc(p.name)}</b><div class="m">${esc(p.job)}${p.salary?` · ₹${esc(p.salary)} lakh / year`:""}</div><div class="pa">${esc(p.gothram)}${p.star?` · ${esc(p.star)}`:""}</div></div><div class="r2">${esc(age(p)||"")} · ${esc(loc(p))}<br>${esc(p.chat?"From "+p.chat:"")}</div></button>`}
+function list(a){return a.length?a.map(card).join(""):`<p class="m">No profiles found. Try fewer words or another preference.</p>`}
+function sel(id,opts,v,any){return `<select id="${id}">${any?`<option value="">Any</option>`:`<option value="">Choose</option>`}${opts.map(o=>`<option ${o==v?"selected":""}>${esc(o)}</option>`).join("")}</select>`}
+function fld(f,v,pre){const[k,l,o,t]=f;return `<label for="${pre}${k}">${l}</label>`+(o?sel(pre+k,o,v):`<input id="${pre}${k}" type="${t||"text"}" value="${esc(v)}">`)}
+function rd(pre,obj){F.forEach(f=>{const e=$("#"+pre+f[0]);if(e)obj[f[0]]=e.value});return obj}
+const back=(t,v)=>`<a class="b" data-go="${v}">← ${t}</a>`;
+function gar(){let s='<svg viewBox="0 0 1000 46" preserveAspectRatio="xMidYMax slice" width="100%" height="42" aria-hidden="true"><path d="M0 6Q500 34 1000 6" fill="none" stroke="#8a5a14" stroke-width="2"/>';for(let i=0;i<50;i++){const x=10+i*20,t=x/1000,y=10+56*t*(1-t),k=i%4;s+=k==0?`<circle cx="${x}" cy="${y.toFixed(1)}" r="8" fill="#b3121a"/><circle cx="${x}" cy="${y.toFixed(1)}" r="4" fill="#7d0a10"/>`:k==2?`<circle cx="${x}" cy="${y.toFixed(1)}" r="7" fill="#f2b705"/>`:`<circle cx="${x}" cy="${y.toFixed(1)}" r="4.5" fill="#fff" stroke="#d9d2c3"/>`}return s+'</svg>'}
+function thor(){let s='<svg viewBox="0 0 1000 84" preserveAspectRatio="xMidYMin slice" width="100%" height="76" aria-hidden="true"><path d="M0 6Q500 34 1000 6" fill="none" stroke="#9a6a1c" stroke-width="3"/>';for(let i=0;i<27;i++){const x=18+i*37.5,t=x/1000,y=6+56*t*(1-t);s+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><g class="lf" style="animation-delay:-${(i*.22).toFixed(2)}s">`+(i%3==2?'<path d="M0 0V14" stroke="#9a6a1c" stroke-width="1.5"/><circle cy="22" r="8" fill="#f2a20c"/><circle cy="22" r="3.5" fill="#c8620a"/>':`<path d="M0 0C8 12 9 32 0 54C-9 32-8 12 0 0Z" fill="${i%2?"#3f7d3a":"#4f9145"}"/><path d="M0 3V48" stroke="#2b5a2a" stroke-width="1"/>`)+'</g></g>'}return s+'</svg>'}
+function render(){const a=$("#app");$("#th").innerHTML=thor();$("#gl").innerHTML=gar();
+if(V.v=="home")a.innerHTML=`<div class="hero"><svg class="kal" viewBox="0 0 120 170" aria-hidden="true"><use href="#kal2"/></svg><div><p class="te" lang="te">శుభమస్తు</p><h1>Subba Rao Matchmaking Services</h1><p class="m" style="margin:6px 0 0">Finding the right match, with care.</p></div><svg class="kal" viewBox="0 0 120 170" aria-hidden="true"><use href="#kal2"/></svg></div><p class="m" style="margin:26px 0 14px;text-align:center">What would you like to do?</p><div class="g g2"><button class="c home" data-go="find"><div><svg class="ic" viewBox="0 0 48 48" aria-hidden="true"><circle cx="20" cy="20" r="11" fill="none" stroke="#9a6a1c" stroke-width="4"/><path d="M29 29L41 41" stroke="#9a6a1c" stroke-width="4" stroke-linecap="round"/></svg><h2>Find Profiles</h2><p>Search and view profiles.</p></div></button><button class="c home" data-go="match"><div><svg class="ic" viewBox="0 0 48 48" aria-hidden="true"><circle cx="19" cy="26" r="12" fill="none" stroke="#c98a1e" stroke-width="4"/><circle cx="31" cy="26" r="12" fill="none" stroke="#9a3b5a" stroke-width="4"/></svg><h2>Matching</h2><p>Find suitable matches for a profile.</p></div></button></div><div style="text-align:center;margin-top:30px"><svg class="fire" viewBox="0 0 160 120" aria-hidden="true"><use href="#fire"/></svg></div><p class="m" style="margin-top:12px;font-size:15px;text-align:center">🔒 Private matchmaking workspace · Prototype: data stays on this device only</p>`;
+if(V.v=="find"){a.innerHTML=`${back("Home","home")}<div class="row"><h2 style="margin:0">Find profiles</h2><button class="btn" id="add">+ Add profile</button></div><div style="margin-top:14px"><input id="q" placeholder="Search name, job, gothram, star, city, education…" value="${esc(Q)}"></div><div id="res"></div>`;fr()}
+if(V.v=="match"){a.innerHTML=`${back("Home","home")}<h2>Find suitable profiles</h2><div class="g" style="grid-template-columns:minmax(0,300px) 1fr;align-items:start" id="mg"><div class="c"><div class="row"><span class="m">Looking for</span><div class="tg"><button class="${M.g=="Woman"?"on":""}" data-g="Woman">Women</button><button class="${M.g=="Man"?"on":""}" data-g="Man">Men</button></div></div><h3 style="font-size:19px;margin:16px 0 0">Your three preferences</h3><label>Location</label>${sel("ml",LOC,M.loc,1)}<label>Age</label>${sel("ma",AG.map(x=>x[0]),M.age,1)}<label>Job</label>${sel("mj",JOB,M.job,1)}<button class="btn p" id="fm" style="width:100%;margin-top:18px">Find profiles</button></div><div id="mr"></div></div>`;if(innerWidth<700)$("#mg").style.gridTemplateColumns="1fr";mr()}
+if(V.v=="prof")pr();}
+function fr(){$("#res").innerHTML=list(P.filter(p=>hit(p,Q)).slice().reverse())}
+function mres(){const r=AG.find(x=>x[0]==M.age);return P.filter(p=>p.gender==M.g&&(!M.loc||p.locG==M.loc)&&(!M.job||p.jobG==M.job)&&(!r||(age(p)>=r[1]&&age(p)<=r[2])))}
+function mr(){const el=$("#mr");if(!M.done){el.innerHTML=`<p class="m">Choose your preferences and tap Find profiles.</p>`;return}
+const n=[M.loc,M.age,M.job].filter(Boolean).length;el.innerHTML=`<div class="row"><h3>${mres().length} suitable profiles</h3><span class="bd">${n?`All ${n} preference${n>1?"s":""} matched`:"No preferences chosen"}</span></div><div style="margin-top:12px"><input id="mq" placeholder="Search within these results" value="${esc(M.q)}"></div><div id="ml2">${list(mres().filter(p=>hit(p,M.q)))}</div><p class="m" style="font-size:14px">Open a profile to see the original image and source.</p>`}
+function stxt(p){const L=(a,b)=>b?`${a}: ${b}`:"",j=(...x)=>x.filter(Boolean).join(" | ");return [`*${p.name}*`,j(L("Age",age(p)),L("Height",p.height)),L("Location",loc(p)),j(L("Job",p.job),p.salary?`Salary: ₹${p.salary} lakh/year`:""),L("Education",p.education),j(L("DOB",p.dob),L("Time",p.tob)),j(L("Rashi",p.rashi),L("Nakshatra",p.star)),j(L("Gothram",p.gothram),L("Maternal gothram",p.mg)),j(L("Caste",p.caste),L("Complexion",p.complexion)),L("Siblings",p.siblings),L("Father",p.father)].filter(Boolean).join("\n")}
+function pr(){const p=P.find(x=>x.id==V.id);if(!p){V={v:"find"};return render()}
+const ph=p.photos;S=Math.min(S,Math.max(ph.length-1,0));
+$("#app").innerHTML=`${back("Back","find")}<h1>Profile / ${esc(p.name)}</h1><div class="g g2" style="margin-top:18px;align-items:start"><div class="c"><h3>Original photo</h3><div class="big" style="margin-top:14px">${ph[S]?`<img src="${ph[S]}" alt="">`:"No photo yet"}</div><div class="th">${ph.map((x,i)=>`<img src="${x}" class="${i==S?"on":""}" data-s="${i}" alt="">`).join("")}</div><div class="row"><label class="btn o" style="margin:0;cursor:pointer;color:var(--ink)">+ Add photo<input type="file" id="ap" accept="image/*" multiple hidden></label><button class="btn" id="sp">Share photos</button></div></div><div><div class="c"><div class="row"><h3>Profile details</h3><button class="btn o" id="ed">${E?"Cancel":"Edit"}</button></div>${E?`<div id="ef">${F.map(f=>fld(f,p[f[0]]??"","e_")).join("")}</div><button class="btn p" id="se" style="margin-top:14px">Save changes</button>`:`<div class="dl" style="margin-top:8px">${F.map(f=>`<div><span>${f[1].replace(" (₹ lakh / year)","").replace(" (if Others)","")}</span><span>${esc(f[0]=="age"?age(p):f[0]=="locG"?loc(p):f[0]=="salary"&&p.salary?"₹"+p.salary+" lakh / year":p[f[0]]||"–")}</span></div>`).join("")}</div><div style="text-align:right;margin-top:14px"><button class="btn" id="st">Share details</button></div>`}</div><div class="c" style="margin-top:16px"><h3>Source</h3><div class="dl" style="grid-template-columns:1fr"><div><span>WhatsApp chat</span><span>${esc(p.chat||"–")}</span></div><div><span>Received date</span><span>${esc(p.rcv||"–")}</span></div></div></div><div style="margin-top:16px">${D?`<p>Delete ${esc(p.name)} and all photos for good?</p><button class="btn r" id="dy">Yes, delete</button> <button class="btn o" id="dn">Keep</button>`:`<button class="btn r" id="dl">Delete profile</button>`}</div></div></div>`}
+function rs(f){return new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onload=()=>{const k=Math.min(1,700/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r(c.toDataURL("image/jpeg",.7))};i.src=u})}
+const d2f=(u,i)=>{const b=atob(u.split(",")[1]),a=new Uint8Array(b.length);for(let k=0;k<b.length;k++)a[k]=b.charCodeAt(k);return new File([a],`photo${i+1}.jpg`,{type:"image/jpeg"})};
+async function shareT(t){try{if(navigator.share)await navigator.share({text:t});else window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank")}catch(e){}}
+async function shareP(p){if(!p.photos.length)return toast("Add a photo first.");try{const fs=p.photos.map(d2f);if(navigator.canShare&&navigator.canShare({files:fs}))await navigator.share({files:fs});else toast("Photo sharing works in Chrome on a phone or tablet.")}catch(e){}}
+function popup(ph){N={photos:ph||[]};const m=document.createElement("div");m.className="md";m.id="md";document.body.appendChild(m);pm()}
+function pm(){const m=$("#md"),cs=[...new Set(P.map(p=>p.chat).filter(Boolean))];const old={};F.forEach(f=>{const e=$("#n_"+f[0]);if(e)old[f[0]]=e.value});const oc=$("#n_chat")?$("#n_chat").value:"";
+m.innerHTML=`<div><div class="row"><h2 style="margin:0">New profile</h2><button class="btn o" id="nc">Close</button></div><div class="g g2" style="margin-top:14px;align-items:start"><div class="c"><h3>Candidate photos</h3><div class="big" style="margin-top:12px">${N.photos[0]?`<img src="${N.photos[0]}" alt="">`:"Add a photo"}</div><div class="th">${N.photos.map((x,i)=>`<img src="${x}" data-x="${i}" title="Tap to remove" alt="">`).join("")}</div><label class="btn o" style="cursor:pointer;color:var(--ink);display:inline-block">+ Add photo<input type="file" id="np" accept="image/*" multiple hidden></label><p class="m" style="font-size:14px">In the final app, sharing an image from WhatsApp opens this window with the photo already added.</p></div><div class="c"><h3>Profile details</h3>${F.map(f=>fld(f,old[f[0]]||"","n_")).join("")}<label for="n_chat">WhatsApp chat (source)</label><input id="n_chat" list="cs" value="${esc(oc)}" placeholder="Which chat did this come from?"><datalist id="cs">${cs.map(c=>`<option value="${esc(c)}">`).join("")}</datalist><button class="btn p" id="ns" style="width:100%;margin-top:18px">Save profile</button></div></div></div>`}
+document.addEventListener("click",async e=>{const t=e.target,c=s=>t.closest(s);let x;
+if(x=c("[data-go]")){V={v:x.dataset.go};E=0;D=0;render()}
+else if(x=c(".pc")){V={v:"prof",id:x.dataset.id};S=0;E=0;D=0;render();loadPhotos(P.find(p=>p.id==V.id)).catch(err=>toast(err.message))}
+else if(x=c("[data-g]")){M.g=x.dataset.g;M.done=0;render()}
+else if(c("#fm")){M.loc=$("#ml").value;M.age=$("#ma").value;M.job=$("#mj").value;M.done=1;M.q="";mr()}
+else if(c("#add"))popup();
+else if(c("#nc"))$("#md").remove();
+else if(x=c("[data-x]")){N.photos.splice(+x.dataset.x,1);if(N.files)N.files.splice(+x.dataset.x,1);pm()}
+else if(c("#ns")){const o=rd("n_",{});if(!o.name.trim())return toast("Enter the name first.");o.chat=$("#n_chat").value.trim();o.rcv=new Date().toISOString().slice(0,10);const files=N.files||[];try{const created=await api('/api/profiles',{method:'POST',body:JSON.stringify(toCloud(o))});if(files.length)await uploadPhotos(created,files);$("#md").remove();await loadProfiles();V={v:"prof",id:created.id};S=0;E=0;D=0;render();await loadPhotos(P.find(p=>p.id==created.id));toast("Profile saved.")}catch(err){toast(err.message)}}else if(x=c("[data-s]")){S=+x.dataset.s;pr()}
+else if(c("#sp"))shareP(P.find(p=>p.id==V.id));
+else if(c("#st"))shareT(stxt(P.find(p=>p.id==V.id)));
+else if(c("#ed")){E=!E;pr()}
+else if(c("#se")){const p=P.find(p=>p.id==V.id),draft={...p};rd("e_",draft);try{await api("/api/profiles/"+encodeURIComponent(p.id),{method:"PATCH",body:JSON.stringify(toCloud(draft))});Object.assign(p,draft);E=0;pr();toast("Changes saved.")}catch(err){toast(err.message)}}
+else if(c("#dl")){D=1;pr()}else if(c("#dn")){D=0;pr()}
+else if(c("#dy")){toast("Cloud deletion is disabled to protect existing records. Contact administrator.");D=0;pr()}});
+document.addEventListener("input",e=>{const i=e.target.id;if(i=="q"){Q=e.target.value;fr()}if(i=="mq"){M.q=e.target.value;$("#ml2").innerHTML=list(mres().filter(p=>hit(p,M.q)))}});
+document.addEventListener("change",async e=>{const i=e.target.id,fs=[...(e.target.files||[])];
+if(i=="np"){N.files=[...(N.files||[]),...fs];for(const f of fs)N.photos.push(await rs(f));pm()}
+if(i=="ap"){const p=P.find(p=>p.id==V.id);try{await uploadPhotos(p,fs);await loadPhotos(p);toast("Photos uploaded.")}catch(err){toast(err.message)}}});
+start();
+</script></body></html>

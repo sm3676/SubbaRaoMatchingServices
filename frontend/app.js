@@ -1333,6 +1333,7 @@ async function goToPhotoUpload(profileId) {
 // PROFILE SHARING CARD - WHATSAPP + PDF + PNG
 // =====================================================
 
+
 async function createSharingCard(profileId) {
     try {
         const data = await api(
@@ -1356,15 +1357,11 @@ async function createSharingCard(profileId) {
 
         cardArea.innerHTML = `
             <h2>Candidate Profile Sharing Card</h2>
-            <p class="muted">
-                Phone number is hidden by default. Select the checkbox only
-                if you want to include it in the downloaded or shared card.
-            </p>
 
-            <label style="display:flex;align-items:center;gap:8px;margin:15px 0;">
-                <input type="checkbox" id="share-show-phone">
-                Show phone number on sharing card
-            </label>
+            <p class="muted">
+                This card is safe to share. Phone number and private
+                submission information are never included.
+            </p>
 
             <div id="share-card-preview" style="
                 width:100%;
@@ -1372,87 +1369,135 @@ async function createSharingCard(profileId) {
                 box-sizing:border-box;
                 margin:15px auto;
                 padding:30px;
-                background:#ffffff;
-                color:#20252b;
-                border:1px solid #dedede;
-                border-radius:14px;
+                background:#fffaf0;
+                color:#30251d;
+                border:3px solid #b28a45;
+                border-radius:16px;
                 font-family:Arial,sans-serif;
             ">
-                <div style="text-align:center;border-bottom:3px solid #8b6b3d;
-                    padding-bottom:16px;margin-bottom:20px;">
-                    <div style="font-size:13px;letter-spacing:3px;
-                        color:#8b6b3d;font-weight:bold;">
-                        MATRIMONY PROFILE
+                <div style="
+                    text-align:center;
+                    border-bottom:2px solid #b28a45;
+                    padding-bottom:16px;
+                    margin-bottom:20px;
+                ">
+                    <div style="font-size:25px">🪔</div>
+                    <div style="
+                        font-size:13px;
+                        letter-spacing:2px;
+                        color:#8b6b3d;
+                        font-weight:bold;
+                    ">
+                        SUBBA RAO MATCHING SERVICES
                     </div>
-                    <h1 style="margin:10px 0 4px;font-size:28px;">
+                    <div style="font-size:12px;color:#8b6b3d;margin-top:5px">
+                        Tradition • Trust • Togetherness
+                    </div>
+
+                    <h1 style="margin:14px 0 5px;font-size:27px">
                         ${escapeHTML(p.full_name)}
                     </h1>
-                    <div style="color:#666;font-size:14px;">
-                        ${escapeHTML(p.profile_code)}
+
+                    <div style="color:#777;font-size:13px">
+                        Profile Code: ${escapeHTML(p.profile_code)}
                     </div>
                 </div>
 
-                <div style="display:flex;gap:22px;align-items:flex-start;
-                    flex-wrap:wrap;">
+                <div style="
+                    display:flex;
+                    gap:22px;
+                    align-items:flex-start;
+                    flex-wrap:wrap;
+                ">
                     ${photoUrl ? `
-                        <img src="${escapeHTML(photoUrl)}"
+                        <img
+                            src="${escapeHTML(photoUrl)}"
                             crossorigin="anonymous"
                             alt="Candidate"
-                            style="width:210px;height:250px;
-                            object-fit:cover;border-radius:10px;
-                            border:1px solid #ddd;">
+                            style="
+                                width:210px;
+                                height:250px;
+                                object-fit:cover;
+                                border-radius:10px;
+                                border:2px solid #d8c49c;
+                                background:#fff;
+                            "
+                        >
                     ` : `
-                        <div style="width:210px;height:250px;
-                            display:flex;align-items:center;
-                            justify-content:center;background:#f1f1f1;
-                            border-radius:10px;color:#777;">
+                        <div style="
+                            width:210px;
+                            height:250px;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            background:#f1eadc;
+                            border-radius:10px;
+                            color:#777;
+                        ">
                             Photo not available
                         </div>
                     `}
 
-                    <div style="flex:1;min-width:220px;">
-                        <div style="font-size:20px;font-weight:bold;
-                            margin-bottom:12px;color:#8b6b3d;">
+                    <div style="flex:1;min-width:220px">
+                        <h3 style="color:#8b6b3d;margin-top:0">
                             Personal Details
-                        </div>
+                        </h3>
+
+                        ${shareField('Gender', p.gender)}
                         ${shareField('Age', p.age)}
                         ${shareField('Height', p.height)}
-                        ${shareField('Gender', p.gender)}
                         ${shareField('Location', p.location)}
                         ${shareField('Gothram', p.gothram)}
                         ${shareField('Nakshatram', p.star)}
                     </div>
                 </div>
 
-                <div style="margin-top:22px;padding-top:18px;
-                    border-top:1px solid #ddd;">
-                    <div style="font-size:20px;font-weight:bold;
-                        margin-bottom:12px;color:#8b6b3d;">
+                <div style="
+                    margin-top:22px;
+                    padding-top:18px;
+                    border-top:1px solid #d8c49c;
+                ">
+                    <h3 style="color:#8b6b3d;margin-top:0">
                         Education & Career
-                    </div>
+                    </h3>
+
                     ${shareField('Education', p.education)}
                     ${shareField('Profession', p.job)}
-                    ${shareField('Annual Salary', p.salary_lpa
-                        ? p.salary_lpa + ' LPA' : '')}
-                    <div id="share-phone-row" style="display:none;">
-                        ${shareField('Phone', p.phone)}
-                    </div>
+                    ${shareField(
+                        'Annual Salary',
+                        p.salary_lpa ? p.salary_lpa + ' LPA' : ''
+                    )}
                 </div>
 
-                <div style="margin-top:22px;padding-top:12px;
-                    border-top:1px solid #ddd;text-align:center;
-                    color:#888;font-size:11px;">
-                    Shared by Matchmaking Desk
+                <div style="
+                    margin-top:22px;
+                    padding-top:15px;
+                    border-top:1px solid #d8c49c;
+                    text-align:center;
+                    color:#8b6b3d;
+                    font-size:12px;
+                ">
+                    🪔 Subba Rao Matching Services 🪔
+                    <div style="margin-top:5px">
+                        Tradition • Trust • Togetherness
+                    </div>
                 </div>
             </div>
 
-            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="
+                display:flex;
+                gap:12px;
+                flex-wrap:wrap;
+                margin-top:15px;
+            ">
                 <button type="button" id="share-whatsapp">
-                    Share to WhatsApp
+                    Share Profile on WhatsApp
                 </button>
+
                 <button type="button" id="download-share-png">
                     Download PNG
                 </button>
+
                 <button type="button" id="download-share-pdf">
                     Download PDF
                 </button>
@@ -1460,13 +1505,6 @@ async function createSharingCard(profileId) {
         `;
 
         area.appendChild(cardArea);
-
-        const phoneCheckbox = document.querySelector('#share-show-phone');
-        const phoneRow = document.querySelector('#share-phone-row');
-
-        phoneCheckbox.addEventListener('change', () => {
-            phoneRow.style.display = phoneCheckbox.checked ? 'block' : 'none';
-        });
 
         document.querySelector('#share-whatsapp')
             .addEventListener('click', shareToWhatsApp);
@@ -1477,19 +1515,35 @@ async function createSharingCard(profileId) {
         document.querySelector('#download-share-pdf')
             .addEventListener('click', downloadSharingPDF);
 
-        cardArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        cardArea.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
 
     } catch (e) {
         notice('Could not create sharing card: ' + e.message);
     }
 }
 
+
 function shareField(label, value) {
-    if (value === null || value === undefined || value === '') return '';
+    if (
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ''
+    ) {
+        return '';
+    }
+
     return `
-        <div style="display:flex;gap:8px;margin:8px 0;
-            font-size:14px;line-height:1.5;">
-            <strong style="min-width:115px;color:#555;">
+        <div style="
+            display:flex;
+            gap:8px;
+            margin:8px 0;
+            font-size:14px;
+            line-height:1.5;
+        ">
+            <strong style="min-width:115px;color:#66543b">
                 ${escapeHTML(label)}
             </strong>
             <span>${escapeHTML(value)}</span>
@@ -1499,7 +1553,7 @@ function shareField(label, value) {
 
 
 // =====================================================
-// SHARE CANDIDATE CARD TO WHATSAPP
+// PRIVACY-SAFE WHATSAPP IMAGE SHARING
 // =====================================================
 
 async function shareToWhatsApp() {
@@ -1512,17 +1566,17 @@ async function shareToWhatsApp() {
 
     if (!window.html2canvas) {
         return notice(
-            'Sharing library did not load. Check your internet connection and refresh.'
+            'Sharing library did not load. Refresh the website and try again.'
         );
     }
 
     try {
         button.disabled = true;
-        button.textContent = 'Preparing WhatsApp share...';
+        button.textContent = 'Preparing profile image...';
 
         const canvas = await html2canvas(card, {
             scale: 2,
-            backgroundColor: '#ffffff',
+            backgroundColor: '#fffaf0',
             useCORS: true,
             allowTaint: false,
             logging: false
@@ -1533,18 +1587,19 @@ async function shareToWhatsApp() {
         );
 
         if (!blob) {
-            throw new Error('Could not create candidate image.');
+            throw new Error('Could not create profile image.');
         }
 
         const file = new File(
             [blob],
-            'candidate-profile.png',
+            'subba-rao-candidate-profile.png',
             { type: 'image/png' }
         );
 
         const shareText =
-            'Candidate Matrimony Profile\n' +
-            'Please find the attached candidate profile.';
+            '🪔 Subba Rao Matching Services\n' +
+            'Candidate matrimonial profile attached.\n' +
+            'Tradition • Trust • Togetherness';
 
         if (
             navigator.share &&
@@ -1553,7 +1608,7 @@ async function shareToWhatsApp() {
         ) {
             await navigator.share({
                 files: [file],
-                title: 'Candidate Matrimony Profile',
+                title: 'Candidate Profile',
                 text: shareText
             });
 
@@ -1562,21 +1617,22 @@ async function shareToWhatsApp() {
             const link = document.createElement('a');
 
             link.href = objectURL;
-            link.download = 'candidate-profile.png';
+            link.download = 'subba-rao-candidate-profile.png';
+
             document.body.appendChild(link);
             link.click();
             link.remove();
 
             setTimeout(() => URL.revokeObjectURL(objectURL), 10000);
 
-            const whatsappURL =
-                'https://wa.me/?text=' + encodeURIComponent(shareText);
-
-            window.open(whatsappURL, '_blank');
+            window.open(
+                'https://wa.me/?text=' + encodeURIComponent(shareText),
+                '_blank'
+            );
 
             notice(
-                'Candidate image downloaded and WhatsApp opened. ' +
-                'Please attach candidate-profile.png in the WhatsApp chat.'
+                'Profile image downloaded. WhatsApp opened. ' +
+                'Attach the downloaded PNG image to your chat.'
             );
         }
 
@@ -1587,9 +1643,10 @@ async function shareToWhatsApp() {
         }
     } finally {
         button.disabled = false;
-        button.textContent = 'Share to WhatsApp';
+        button.textContent = 'Share Profile on WhatsApp';
     }
 }
+
 
 
 // =====================================================
