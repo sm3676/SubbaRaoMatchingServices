@@ -1,0 +1,5 @@
+{
+ "name":"Subba Rao Matchmaking Services","short_name":"Subba Rao Matches","start_url":"./","scope":"./","display":"standalone","background_color":"#fff8f3","theme_color":"#67285f",
+ "icons":[{"src":"assets/app-icon.png","sizes":"192x192 512x512","type":"image/png","purpose":"any maskable"}],
+ "share_target":{"action":"./","method":"GET","enctype":"application/x-www-form-urlencoded","params":{"title":"title","text":"text","url":"url"}}
+}
