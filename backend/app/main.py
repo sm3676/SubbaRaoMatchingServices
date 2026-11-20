@@ -579,25 +579,67 @@ def dashboard(user=Depends(current_user)):
 # --------------------------------------------------
 
 @app.get("/api/profiles")
-def profiles(q: str = "", user=Depends(current_user)):
-    query = (
-        admin_client.table("profiles")
-        .select(
-            "*,first_member:user_profiles!profiles_first_submitted_by_fkey(full_name)"
-        )
-        .order("created_at", desc=True)
-        .limit(500)
+def profiles(q: str = "", page: int = 1, page_size: int = 20, user=Depends(current_user)):
+    """Bounded, database-side pagination; never load all profiles into the browser."""
+    if page < 1 or page_size < 1 or page_size > 50:
+        raise HTTPException(400, "Invalid page or page size (1–50)")
+    if len(q) > 100 or any(c in q for c in ",().%*"):
+        raise HTTPException(400, "Invalid search text")
+    query = admin_client.table("profiles").select(
+        "id,profile_code,gender,full_name,age,height,location,gothram,star,education,job,salary_lpa,source_group,source_date,notes,first_submitted_by,created_at",
+        count="exact"
     )
-
-    if q:
+    if q.strip():
+        term = q.strip()
         query = query.or_(
-            f"profile_code.ilike.%{q}%,"
-            f"full_name.ilike.%{q}%,"
-            f"location.ilike.%{q}%,"
-            f"job.ilike.%{q}%"
+            f"profile_code.ilike.%{term}%,full_name.ilike.%{term}%,"
+            f"location.ilike.%{term}%,job.ilike.%{term}%"
         )
+    offset = (page - 1) * page_size
+    result = query.order("created_at", desc=True).order("id", desc=True).range(
+        offset, offset + page_size - 1
+    ).execute()
+    return {"items": result.data or [], "total": result.count or 0,
+            "page": page, "page_size": page_size,
+            "can_manage_all": user["role"] == "admin", "viewer_id": user["id"]}
 
-    return query.execute().data or []
+
+@app.delete("/api/profiles/{profile_id}")
+def delete_profile(profile_id: str, user=Depends(current_user)):
+    """Only first submitter or admin may delete. Remove private storage objects too."""
+    rows = (admin_client.table("profiles")
+            .select("id,full_name,first_submitted_by")
+            .eq("id", profile_id).limit(1).execute().data or [])
+    if not rows:
+        raise HTTPException(404, "Profile not found")
+    p = rows[0]
+    if user["role"] != "admin" and p.get("first_submitted_by") != user["id"]:
+        raise HTTPException(403, "Only the original submitter or admin can delete this profile")
+    # Financial records are intentionally preserved, not silently deleted.
+    financial = (admin_client.table("commissions").select("id")
+                 .eq("profile_id", profile_id).limit(1).execute().data or [])
+    if financial:
+        raise HTTPException(409, "Profile has commission records. Ask admin to resolve these first")
+    images = (admin_client.table("profile_images").select("storage_path")
+              .eq("profile_id", profile_id).execute().data or [])
+    paths = [r["storage_path"] for r in images if r.get("storage_path")]
+    # Storage removal before DB deletion prevents orphaned files.
+    if paths:
+        try:
+            for i in range(0, len(paths), 100):
+                result = admin_client.storage.from_("profile-images").remove(paths[i:i+100])
+                if isinstance(result, dict) and result.get("error"):
+                    raise RuntimeError(str(result["error"]))
+        except Exception:
+            raise HTTPException(502, "Could not remove photos; profile was not deleted")
+    try:
+        admin_client.table("profiles").delete().eq("id", profile_id).execute()
+    except Exception:
+        raise HTTPException(500, "Could not delete profile; contact admin")
+    audit(user["id"], "profile_deleted", {"profile_id": profile_id,
+                                          "profile_name": p.get("full_name"),
+                                          "removed_images": len(paths)})
+    return {"deleted": True, "profile_id": profile_id}
 
 
 # --------------------------------------------------
