@@ -4,6 +4,8 @@ import json
 import hmac
 import hashlib
 import re
+from functools import lru_cache
+import boto3
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -352,6 +354,42 @@ def nakshatra_compatibility(boy_star, girl_star):
 # PRIVATE PROFILE IMAGE HELPERS
 # --------------------------------------------------
 
+# R2 paths are marked in the existing storage_path column; unmarked paths
+# continue to point at Supabase. No database migration is required.
+R2_PREFIX = "r2/"
+
+
+@lru_cache(maxsize=1)
+def r2_client():
+    if not all((settings.r2_endpoint_url, settings.r2_access_key_id,
+                settings.r2_secret_access_key, settings.r2_bucket_name)):
+        raise RuntimeError("Cloudflare R2 configuration is incomplete")
+    return boto3.client(
+        "s3", endpoint_url=settings.r2_endpoint_url,
+        aws_access_key_id=settings.r2_access_key_id,
+        aws_secret_access_key=settings.r2_secret_access_key,
+        region_name="auto",
+    )
+
+
+def remove_stored_images(paths):
+    r2_keys = [p[len(R2_PREFIX):] for p in paths if p.startswith(R2_PREFIX)]
+    supabase_paths = [p for p in paths if not p.startswith(R2_PREFIX)]
+    if r2_keys:
+        client = r2_client()
+        for i in range(0, len(r2_keys), 1000):
+            result = client.delete_objects(
+                Bucket=settings.r2_bucket_name,
+                Delete={"Objects": [{"Key": k} for k in r2_keys[i:i + 1000]]},
+            )
+            if result.get("Errors"):
+                raise RuntimeError("Cloudflare R2 image removal failed")
+    for i in range(0, len(supabase_paths), 100):
+        result = admin_client.storage.from_("profile-images").remove(supabase_paths[i:i + 100])
+        if isinstance(result, dict) and result.get("error"):
+            raise RuntimeError("Supabase image removal failed")
+
+
 def get_profile_images(profile_id):
     rows = (
         admin_client.table("profile_images")
@@ -369,19 +407,25 @@ def get_profile_images(profile_id):
         signed_url = None
 
         try:
-            signed = admin_client.storage.from_("profile-images").create_signed_url(
-                row["storage_path"],
-                3600,
-            )
-
-            signed_url = (
-                signed.get("signedURL")
-                or signed.get("signedUrl")
-                or signed.get("signed_url")
-            )
-
-            if signed_url and signed_url.startswith("/"):
-                signed_url = settings.supabase_url.rstrip("/") + signed_url
+            storage_path = row["storage_path"]
+            if storage_path.startswith(R2_PREFIX):
+                signed_url = r2_client().generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": settings.r2_bucket_name,
+                            "Key": storage_path[len(R2_PREFIX):]},
+                    ExpiresIn=3600,
+                )
+            else:
+                signed = admin_client.storage.from_("profile-images").create_signed_url(
+                    storage_path, 3600,
+                )
+                signed_url = (
+                    signed.get("signedURL")
+                    or signed.get("signedUrl")
+                    or signed.get("signed_url")
+                )
+                if signed_url and signed_url.startswith("/"):
+                    signed_url = settings.supabase_url.rstrip("/") + signed_url
 
         except Exception:
             signed_url = None
@@ -623,13 +667,10 @@ def delete_profile(profile_id: str, user=Depends(current_user)):
     images = (admin_client.table("profile_images").select("storage_path")
               .eq("profile_id", profile_id).execute().data or [])
     paths = [r["storage_path"] for r in images if r.get("storage_path")]
-    # Storage removal before DB deletion prevents orphaned files.
+    # Remove from the original storage provider before deleting database rows.
     if paths:
         try:
-            for i in range(0, len(paths), 100):
-                result = admin_client.storage.from_("profile-images").remove(paths[i:i+100])
-                if isinstance(result, dict) and result.get("error"):
-                    raise RuntimeError(str(result["error"]))
+            remove_stored_images(paths)
         except Exception:
             raise HTTPException(502, "Could not remove photos; profile was not deleted")
     try:
@@ -1232,43 +1273,45 @@ async def upload_image(
         f"{safe_filename}"
     )
 
+    storage_path = R2_PREFIX + path if settings.r2_enabled else path
+    uploaded = False
     try:
-        admin_client.storage.from_("profile-images").upload(
-            path,
-            raw,
-            {
-                "content-type": file.content_type,
-                "upsert": "false",
-            },
-        )
+        if settings.r2_enabled:
+            r2_client().put_object(
+                Bucket=settings.r2_bucket_name,
+                Key=path,
+                Body=raw,
+                ContentType=file.content_type,
+            )
+        else:
+            admin_client.storage.from_("profile-images").upload(
+                path, raw,
+                {"content-type": file.content_type, "upsert": "false"},
+            )
+        uploaded = True
 
         inserted = (
             admin_client.table("profile_images")
             .insert({
                 "profile_id": profile_id,
-                "storage_path": path,
+                "storage_path": storage_path,
                 "uploaded_by": user["id"],
                 "original_filename": file.filename,
             })
             .execute()
             .data
         )
-
         if not inserted:
             raise RuntimeError("Image record was not created")
-
         row = inserted[0]
 
     except Exception as exc:
-        try:
-            admin_client.storage.from_("profile-images").remove([path])
-        except Exception:
-            pass
-
-        raise HTTPException(
-            400,
-            "Could not upload image. Check the private profile-images bucket and database.",
-        ) from exc
+        if uploaded:
+            try:
+                remove_stored_images([storage_path])
+            except Exception:
+                pass
+        raise HTTPException(502, "Could not save photo to private storage. Try again.") from exc
 
     audit(user["id"], "profile_image_uploaded", {
         "profile_id": profile_id,
