@@ -178,45 +178,27 @@ const contactPattern=/(?:\+?\d[\d\s().-]{7,}\d)|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g
 function cleanShareText(s){return String(s||'').split('\n').filter(line=>!/(?:phone|mobile|contact|whatsapp|e-?mail|address|father.*number|mother.*number)\s*:/i.test(line)).map(line=>line.replace(contactPattern,'').trim()).filter(Boolean).join('\n')}
 async function shareT(t){const safe=cleanShareText(t);try{if(navigator.share)await navigator.share({text:safe});else window.open('https://wa.me/?text='+encodeURIComponent(safe),'_blank','noopener')}catch(e){if(e.name!=='AbortError')toast('Could not share details.')}}
 function closeSharePreview(){document.getElementById('sharePreview')?.remove()}
-// Biodata screenshots are never attached directly. Only user-reviewed crops may be shared.
-async function imageBytes(url){const r=await fetch(url,{mode:'cors',credentials:'omit'});if(!r.ok)throw Error('Image download failed. Check storage CORS.');const b=await r.blob();if(!b.type.startsWith('image/'))throw Error('Invalid image');return b}
-function cropBiodata(url,done){
- const m=document.createElement('div');m.className='md';m.id='cropModal';m.style.zIndex='10004';
- m.innerHTML='<div style="max-width:850px"><div class="row"><h2>Extract candidate photo</h2><button class="btn o" id="cropClose">Close</button></div><p class="m">Drag a rectangle around ONLY the candidate photo. Keep phone numbers, captions and contact text OUTSIDE the selection. The source screenshot is never shared.</p><div style="position:relative;max-width:100%;display:inline-block;touch-action:none" id="cropStage"><img id="cropSource" style="max-width:100%;max-height:65vh;display:block;user-select:none;pointer-events:none"><div id="cropRect" style="display:none;position:absolute;border:3px solid #e11d48;background:rgba(225,29,72,.13);box-sizing:border-box;pointer-events:none"></div></div><p class="m" id="cropStatus">Loading original screenshot…</p><div class="row"><button class="btn p" id="cropSave" disabled>Use selected photo</button><button class="btn o" id="cropCancel">Cancel</button></div></div>';
- document.body.appendChild(m);const close=()=>m.remove();m.querySelector('#cropClose').onclick=close;m.querySelector('#cropCancel').onclick=close;
- const img=m.querySelector('#cropSource'),stage=m.querySelector('#cropStage'),rect=m.querySelector('#cropRect'),status=m.querySelector('#cropStatus');let source,origin=null,selection=null,drag=false;
- imageBytes(url).then(blob=>{source=URL.createObjectURL(blob);img.onload=()=>{status.textContent='Drag to select one photo (not the whole biodata).';URL.revokeObjectURL(source)};img.src=source}).catch(e=>status.textContent=e.message);
- function pos(e){const r=img.getBoundingClientRect();return {x:Math.max(0,Math.min(r.width,e.clientX-r.left)),y:Math.max(0,Math.min(r.height,e.clientY-r.top))}}
- stage.onpointerdown=e=>{if(!img.naturalWidth)return;e.preventDefault();stage.setPointerCapture(e.pointerId);origin=pos(e);drag=true};
- stage.onpointermove=e=>{if(!drag)return;const q=pos(e),x=Math.min(origin.x,q.x),y=Math.min(origin.y,q.y),w=Math.abs(q.x-origin.x),h=Math.abs(q.y-origin.y);selection={x,y,w,h};rect.style.cssText+=`;display:block;left:${x}px;top:${y}px;width:${w}px;height:${h}px`;m.querySelector('#cropSave').disabled=w<20||h<20};
- stage.onpointerup=()=>{drag=false};stage.onpointercancel=()=>{drag=false};
- m.querySelector('#cropSave').onclick=()=>{if(!selection||!img.naturalWidth)return;const r=img.getBoundingClientRect(),scaleX=img.naturalWidth/r.width,scaleY=img.naturalHeight/r.height,c=document.createElement('canvas');c.width=Math.round(selection.w*scaleX);c.height=Math.round(selection.h*scaleY);c.getContext('2d').drawImage(img,selection.x*scaleX,selection.y*scaleY,c.width,c.height,0,0,c.width,c.height);c.toBlob(blob=>{if(!blob)return toast('Could not extract photo');done(new File([blob],`candidate-crop-${Date.now()}.png`,{type:'image/png'}));close()},'image/png')};
+// Simple original-image sharing. Images are not cropped, blurred or recompressed.
+// IMPORTANT: A biodata screenshot may contain phone numbers and addresses.
+async function shareP(p){
+ if(!p||!p.photos.length)return toast('No photo available to share.');
+ const ok=window.confirm('Share the original image(s) exactly as uploaded?\n\nWARNING: Biodata screenshots can contain visible phone numbers, addresses and other contact details. They will NOT be hidden.\n\nPress OK only if you want to share everything visible in the image.');
+ if(!ok)return;
+ try{
+  const files=[];
+  for(let i=0;i<p.photos.length;i++){
+   const r=await fetch(p.photos[i],{mode:'cors',credentials:'omit'});
+   if(!r.ok)throw Error('Photo download failed.');
+   const blob=await r.blob();
+   if(!blob.type.startsWith('image/'))throw Error('Invalid photo file.');
+   const ext=blob.type==='image/png'?'png':blob.type==='image/webp'?'webp':blob.type==='image/gif'?'gif':'jpg';
+   files.push(new File([blob],`profile-photo-${i+1}.${ext}`,{type:blob.type}));
+  }
+  if(!navigator.share||!navigator.canShare?.({files}))throw Error('This browser cannot share photos directly. Open the app in Chrome on your phone.');
+  await navigator.share({files});
+ }catch(e){if(e.name!=='AbortError')toast(e.message||'Could not share photos.');}
 }
-function shareP(p){
- if(!p)return;closeSharePreview();const cropped=[];
- const m=document.createElement('div');m.id='sharePreview';m.className='md';m.style.zIndex='10002';
- m.innerHTML=`<div style="max-width:760px"><div class="row"><h2>Review WhatsApp share</h2><button class="btn o" id="shareClose">Close</button></div><p class="m"><b>Privacy:</b> Biodata screenshots are NEVER sent. Choose “Biodata screenshot” and extract individual candidate photos. Details inside screenshots are not automatically read: type any missing personal/family details below. Never include contacts.</p><label for="shareText">All profile details — edit/add missing biodata information</label><textarea id="shareText" rows="15" style="width:100%;box-sizing:border-box;font:inherit;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);color:var(--ink)">${esc(cleanShareText(stxt(p)))}</textarea><h3 style="margin:18px 0 8px">Photos</h3><div id="shareImages" class="g"></div><h3 style="margin:18px 0 8px">Extracted candidate photos</h3><div id="cropList" class="g g2"></div><label style="display:flex;gap:10px;align-items:flex-start;margin:16px 0"><input id="shareConfirm" type="checkbox" style="width:22px;min-height:22px;flex:none"><span>I reviewed every selected photo and all text. No phone numbers, email, contact details or addresses are present.</span></label><button class="btn p" id="shareNow" disabled>Share verified content</button><p class="m" style="font-size:13px">Cropped photos are limited by screenshot resolution; original separate photo uploads preserve their original bytes. WhatsApp may compress photos or omit text. Check before sending.</p></div>`;
- document.body.appendChild(m);const grid=m.querySelector('#shareImages'),list=m.querySelector('#cropList');
- if(!p.photos.length)grid.textContent='No images uploaded. You can share text only.';
- function resetConfirm(){m.querySelector('#shareConfirm').checked=false;m.querySelector('#shareNow').disabled=true}
- p.photos.forEach((url,i)=>{const item=document.createElement('div');item.style.cssText='padding:12px;border:1px solid var(--line);border-radius:12px';item.innerHTML=`<div class="row"><strong>Image ${i+1}</strong><select class="photoKind" style="max-width:230px"><option value="biodata">Biodata screenshot (safe default)</option><option value="portrait">Separate candidate photo</option></select></div><div class="row" style="margin-top:8px"><img alt="Image review" style="max-width:130px;max-height:180px;object-fit:contain"><div><label class="portraitSelect" style="display:none"><input class="sharePhoto" type="checkbox" style="width:22px;min-height:22px"> Share original photo</label><button class="btn o cropAction" type="button">Extract photo from biodata</button></div></div>`;item.querySelector('img').src=url;const kind=item.querySelector('.photoKind'),select=item.querySelector('.portraitSelect'),crop=item.querySelector('.cropAction');kind.onchange=()=>{select.style.display=kind.value==='portrait'?'flex':'none';crop.style.display=kind.value==='biodata'?'inline-block':'none';item.querySelector('.sharePhoto').checked=false;resetConfirm()};item.querySelector('.sharePhoto').onchange=resetConfirm;crop.onclick=()=>cropBiodata(url,file=>{cropped.push(file);const box=document.createElement('div');box.style.cssText='padding:8px;border:1px solid var(--line);border-radius:12px';const preview=document.createElement('img');preview.src=URL.createObjectURL(file);preview.style.cssText='max-width:150px;max-height:170px;object-fit:contain';const label=document.createElement('label');label.textContent=' Include extracted photo';const cb=document.createElement('input');cb.type='checkbox';cb.checked=true;cb.className='cropSelected';cb.dataset.index=String(cropped.length-1);cb.style.cssText='width:22px;min-height:22px';cb.onchange=resetConfirm;label.prepend(cb);box.append(preview,label);list.appendChild(box);resetConfirm()});grid.appendChild(item)});
- m.querySelector('#shareClose').onclick=closeSharePreview;
- m.querySelector('#shareConfirm').onchange=e=>m.querySelector('#shareNow').disabled=!e.target.checked;
- m.querySelector('#shareText').oninput=resetConfirm;
- m.querySelector('#shareNow').onclick=async()=>{
-  const btn=m.querySelector('#shareNow'),raw=m.querySelector('#shareText').value,safe=cleanShareText(raw);
-  if(raw.trim()!==safe.trim()){m.querySelector('#shareText').value=safe;resetConfirm();return toast('Contact-like text removed. Review and confirm again.')}
-  btn.disabled=true;
-  try{
-   const files=[];for(const el of m.querySelectorAll('.sharePhoto:checked')){const kind=el.closest('div[style*="padding:12px"]')?.querySelector('.photoKind');if(!kind||kind.value!=='portrait')throw Error('Biodata screenshot blocked');const idx=[...grid.children].indexOf(el.closest('div[style*="padding:12px"]'));const blob=await imageBytes(p.photos[idx]);const ext=blob.type==='image/png'?'png':blob.type==='image/webp'?'webp':'jpg';files.push(new File([blob],`candidate-${idx+1}.${ext}`,{type:blob.type}))}
-   for(const el of m.querySelectorAll('.cropSelected:checked'))files.push(cropped[Number(el.dataset.index)]);
-   if(files.length){if(!navigator.share||!navigator.canShare?.({files}))throw Error('This device cannot share files. Try Android Chrome.');await navigator.share({files,text:safe})}
-   else if(navigator.share)await navigator.share({text:safe});else window.open('https://wa.me/?text='+encodeURIComponent(safe),'_blank','noopener');
-   closeSharePreview();
-  }catch(e){if(e.name!=='AbortError')toast(e.message||'Share failed')}
-  finally{if(document.contains(btn))btn.disabled=!m.querySelector('#shareConfirm').checked}
- };
-}
+
 function popup(ph){N={photos:ph||[]};const m=document.createElement("div");m.className="md";m.id="md";document.body.appendChild(m);pm()}
 function pm(){const m=$("#md"),cs=[...new Set(P.map(p=>p.chat).filter(Boolean))];const old={};F.forEach(f=>{const e=$("#n_"+f[0]);if(e)old[f[0]]=e.value});const oc=$("#n_chat")?$("#n_chat").value:"";
 m.innerHTML=`<div><div class="row"><h2 style="margin:0">New profile</h2><button class="btn o" id="nc">Close</button></div><div class="g g2" style="margin-top:14px;align-items:start"><div class="c"><h3>Candidate photos</h3><div class="big" style="margin-top:12px">${N.photos[0]?`<img src="${N.photos[0]}" alt="">`:"Add a photo"}</div><div class="th">${N.photos.map((x,i)=>`<img src="${x}" data-x="${i}" title="Tap to remove" alt="">`).join("")}</div><label class="btn o" style="cursor:pointer;color:var(--ink);display:inline-block">+ Add photo<input type="file" id="np" accept="image/*" multiple hidden></label><p class="m" style="font-size:14px">In the final app, sharing an image from WhatsApp opens this window with the photo already added.</p></div><div class="c"><h3>Profile details</h3>${F.map(f=>fld(f,old[f[0]]||"","n_")).join("")}<label for="n_chat">WhatsApp chat (source)</label><input id="n_chat" list="cs" value="${esc(oc)}" placeholder="Which chat did this come from?"><datalist id="cs">${cs.map(c=>`<option value="${esc(c)}">`).join("")}</datalist><button class="btn p" id="ns" style="width:100%;margin-top:18px">Save profile</button></div></div></div>`}
