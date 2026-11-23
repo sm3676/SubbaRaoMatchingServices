@@ -171,11 +171,50 @@ const n=[M.loc,M.age,M.job].filter(Boolean).length;el.innerHTML=`<div class="row
 function stxt(p){const L=(a,b)=>b?`${a}: ${b}`:"",j=(...x)=>x.filter(Boolean).join(" | ");return [`*${p.name}*`,j(L("Age",age(p)),L("Height",p.height)),L("Location",loc(p)),j(L("Job",p.job),p.salary?`Salary: ₹${p.salary} lakh/year`:""),L("Education",p.education),j(L("DOB",p.dob),L("Time",p.tob)),j(L("Rashi",p.rashi),L("Nakshatra",p.star)),j(L("Gothram",p.gothram),L("Maternal gothram",p.mg)),j(L("Caste",p.caste),L("Complexion",p.complexion)),L("Siblings",p.siblings),L("Father",p.father)].filter(Boolean).join("\n")}
 function pr(){const p=P.find(x=>x.id==V.id);if(!p){V={v:"find"};return render()}
 const ph=p.photos;S=Math.min(S,Math.max(ph.length-1,0));
-$("#app").innerHTML=`${back("Back","find")}<h1>Profile / ${esc(p.name)}</h1><div class="g g2" style="margin-top:18px;align-items:start"><div class="c"><h3>Original photo</h3><div class="big" id="originalPhotoZoom" role="button" tabindex="0" aria-label="Open original photo full screen" style="margin-top:14px">${ph[S]?`<img src="${ph[S]}" alt="">`:"No photo yet"}</div><div class="th">${ph.map((x,i)=>`<img src="${x}" class="${i==S?"on":""}" data-s="${i}" alt="">`).join("")}</div><div class="row"><label class="btn o" style="margin:0;cursor:pointer;color:var(--ink)">+ Add photo<input type="file" id="ap" accept="image/*" multiple hidden></label><button class="btn" id="sp">Share photos</button></div></div><div><div class="c"><div class="row"><h3>Profile details</h3><button class="btn o" id="ed">${E?"Cancel":"Edit"}</button></div>${E?`<div id="ef">${F.map(f=>fld(f,p[f[0]]??"","e_")).join("")}</div><button class="btn p" id="se" style="margin-top:14px">Save changes</button>`:`<div class="dl" style="margin-top:8px">${F.map(f=>`<div><span>${f[1].replace(" (₹ lakh / year)","").replace(" (if Others)","")}</span><span>${esc(f[0]=="age"?age(p):f[0]=="locG"?loc(p):f[0]=="salary"&&p.salary?"₹"+p.salary+" lakh / year":p[f[0]]||"–")}</span></div>`).join("")}</div><div style="text-align:right;margin-top:14px"><button class="btn" id="st">Share details</button></div>`}</div><div class="c" style="margin-top:16px"><h3>Source</h3><div class="dl" style="grid-template-columns:1fr"><div><span>WhatsApp chat</span><span>${esc(p.chat||"–")}</span></div><div><span>Received date</span><span>${esc(p.rcv||"–")}</span></div></div></div><div style="margin-top:16px">${(canManageAll||p.ownerId===viewerId)?(D?`<p>Delete ${esc(p.name)} and all photos for good?</p><button class="btn r" id="dy">Yes, delete</button> <button class="btn o" id="dn">Keep</button>`:`<button class="btn r" id="dl">Delete profile</button>`):`<p class="m">Only the original submitter or admin can delete this profile.</p>`}</div></div></div>`}
+$("#app").innerHTML=`${back("Back","find")}<h1>Profile / ${esc(p.name)}</h1><div class="g g2" style="margin-top:18px;align-items:start"><div class="c"><h3>Original photo</h3><div class="big" id="originalPhotoZoom" role="button" tabindex="0" aria-label="Open original photo full screen" style="margin-top:14px">${ph[S]?`<img src="${ph[S]}" alt="">`:"No photo yet"}</div><div class="th">${ph.map((x,i)=>`<img src="${x}" class="${i==S?"on":""}" data-s="${i}" alt="">`).join("")}</div><div class="row"><label class="btn o" style="margin:0;cursor:pointer;color:var(--ink)">+ Add photo<input type="file" id="ap" accept="image/*" multiple hidden></label><button class="btn" id="sp">Share to WhatsApp</button></div></div><div><div class="c"><div class="row"><h3>Profile details</h3><button class="btn o" id="ed">${E?"Cancel":"Edit"}</button></div>${E?`<div id="ef">${F.map(f=>fld(f,p[f[0]]??"","e_")).join("")}</div><button class="btn p" id="se" style="margin-top:14px">Save changes</button>`:`<div class="dl" style="margin-top:8px">${F.map(f=>`<div><span>${f[1].replace(" (₹ lakh / year)","").replace(" (if Others)","")}</span><span>${esc(f[0]=="age"?age(p):f[0]=="locG"?loc(p):f[0]=="salary"&&p.salary?"₹"+p.salary+" lakh / year":p[f[0]]||"–")}</span></div>`).join("")}</div><div style="text-align:right;margin-top:14px"><button class="btn" id="st">Share details</button></div>`}</div><div class="c" style="margin-top:16px"><h3>Source</h3><div class="dl" style="grid-template-columns:1fr"><div><span>WhatsApp chat</span><span>${esc(p.chat||"–")}</span></div><div><span>Received date</span><span>${esc(p.rcv||"–")}</span></div></div></div><div style="margin-top:16px">${(canManageAll||p.ownerId===viewerId)?(D?`<p>Delete ${esc(p.name)} and all photos for good?</p><button class="btn r" id="dy">Yes, delete</button> <button class="btn o" id="dn">Keep</button>`:`<button class="btn r" id="dl">Delete profile</button>`):`<p class="m">Only the original submitter or admin can delete this profile.</p>`}</div></div></div>`}
 function rs(f){return new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onload=()=>{const k=Math.min(1,700/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r(c.toDataURL("image/jpeg",.7))};i.src=u})}
-const d2f=(u,i)=>{const b=atob(u.split(",")[1]),a=new Uint8Array(b.length);for(let k=0;k<b.length;k++)a[k]=b.charCodeAt(k);return new File([a],`photo${i+1}.jpg`,{type:"image/jpeg"})};
-async function shareT(t){try{if(navigator.share)await navigator.share({text:t});else window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank")}catch(e){}}
-async function shareP(p){if(!p.photos.length)return toast("Add a photo first.");try{const fs=p.photos.map(d2f);if(navigator.canShare&&navigator.canShare({files:fs}))await navigator.share({files:fs});else toast("Photo sharing works in Chrome on a phone or tablet.")}catch(e){}}
+// Contact-safe share: only explicitly selected and visually reviewed images may leave the app.
+const contactPattern=/(?:\+?\d[\d\s().-]{7,}\d)|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g;
+function cleanShareText(s){return String(s||'').split('\n').filter(line=>!/(?:phone|mobile|contact|whatsapp|e-?mail|address|father.*number|mother.*number)\s*:/i.test(line)).map(line=>line.replace(contactPattern,'').trim()).filter(Boolean).join('\n')}
+async function shareT(t){const safe=cleanShareText(t);try{if(navigator.share)await navigator.share({text:safe});else window.open('https://wa.me/?text='+encodeURIComponent(safe),'_blank','noopener')}catch(e){if(e.name!=='AbortError')toast('Could not share details.')}}
+function closeSharePreview(){document.getElementById('sharePreview')?.remove()}
+function shareP(p){
+ if(!p)return;
+ closeSharePreview();
+ const m=document.createElement('div');m.id='sharePreview';m.className='md';m.style.zIndex='10002';
+ m.innerHTML=`<div style="max-width:720px"><div class="row"><h2>Review WhatsApp share</h2><button class="btn o" id="shareClose" type="button">Close</button></div><p class="m">Only select separate candidate photos that have NO phone numbers, emails, addresses or other contact details. Never select a biodata screenshot containing contacts. Original files are not edited.</p><label for="shareText">Profile details (editable)</label><textarea id="shareText" rows="12" style="width:100%;box-sizing:border-box;font:inherit;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);color:var(--ink)">${esc(cleanShareText(stxt(p)))}</textarea><h3 style="margin:18px 0 8px">Select verified candidate photos</h3><div id="shareImages" class="g g2"></div><label style="display:flex;gap:10px;align-items:flex-start;margin:16px 0"><input id="shareConfirm" type="checkbox" style="width:22px;min-height:22px;flex:none"><span>I checked the text and every selected image. No phone numbers, emails, addresses or contact details are visible.</span></label><button class="btn p" id="shareNow" type="button" disabled>Share verified content</button><p class="m" style="font-size:13px">Photos are sent as actual image files when your device supports file sharing. WhatsApp may compress images or omit accompanying text; check the WhatsApp preview before sending.</p></div>`;
+ document.body.appendChild(m);
+ const grid=m.querySelector('#shareImages');
+ if(!p.photos.length)grid.textContent='No photos available; you can share text only.';
+ p.photos.forEach((url,i)=>{const item=document.createElement('label');item.style.cssText='display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px';const cb=document.createElement('input');cb.type='checkbox';cb.className='sharePhoto';cb.value=String(i);cb.style.cssText='width:22px;min-height:22px;flex:none';const img=document.createElement('img');img.src=url;img.alt='Review image '+(i+1);img.style.cssText='max-width:120px;max-height:160px;object-fit:contain';const text=document.createElement('span');text.textContent='Image '+(i+1)+' — select only if contact-free';item.append(cb,img,text);grid.appendChild(item)});
+ m.querySelector('#shareClose').onclick=closeSharePreview;
+ m.querySelector('#shareConfirm').onchange=e=>m.querySelector('#shareNow').disabled=!e.target.checked;
+ m.querySelector('#shareNow').onclick=async()=>{
+  const btn=m.querySelector('#shareNow');btn.disabled=true;
+  const raw=m.querySelector('#shareText').value;
+  const safe=cleanShareText(raw);
+  if(raw.trim()!==safe.trim()){toast('Contact-like text was removed. Review again.');m.querySelector('#shareText').value=safe;m.querySelector('#shareConfirm').checked=false;return}
+  const selected=[...m.querySelectorAll('.sharePhoto:checked')].map(el=>p.photos[Number(el.value)]);
+  try{
+   const files=[];
+   for(let i=0;i<selected.length;i++){
+    const response=await fetch(selected[i],{mode:'cors',credentials:'omit'});
+    if(!response.ok)throw Error('Photo could not be loaded');
+    const blob=await response.blob();
+    if(!blob.type.startsWith('image/'))throw Error('Invalid image response');
+    const ext=blob.type==='image/png'?'png':blob.type==='image/webp'?'webp':'jpg';
+    files.push(new File([blob],`candidate-photo-${i+1}.${ext}`,{type:blob.type}));
+   }
+   if(files.length){
+    if(!navigator.share||!navigator.canShare||!navigator.canShare({files}))throw Error('This browser cannot share image files. Try Android Chrome.');
+    await navigator.share({files,text:safe});
+   }else if(navigator.share)await navigator.share({text:safe});
+   else window.open('https://wa.me/?text='+encodeURIComponent(safe),'_blank','noopener');
+   closeSharePreview();
+  }catch(err){if(err.name!=='AbortError')toast(err.message||'Share failed. Check photo access and browser permissions.');}
+  finally{if(document.contains(btn))btn.disabled=!m.querySelector('#shareConfirm').checked}
+ };
+}
 function popup(ph){N={photos:ph||[]};const m=document.createElement("div");m.className="md";m.id="md";document.body.appendChild(m);pm()}
 function pm(){const m=$("#md"),cs=[...new Set(P.map(p=>p.chat).filter(Boolean))];const old={};F.forEach(f=>{const e=$("#n_"+f[0]);if(e)old[f[0]]=e.value});const oc=$("#n_chat")?$("#n_chat").value:"";
 m.innerHTML=`<div><div class="row"><h2 style="margin:0">New profile</h2><button class="btn o" id="nc">Close</button></div><div class="g g2" style="margin-top:14px;align-items:start"><div class="c"><h3>Candidate photos</h3><div class="big" style="margin-top:12px">${N.photos[0]?`<img src="${N.photos[0]}" alt="">`:"Add a photo"}</div><div class="th">${N.photos.map((x,i)=>`<img src="${x}" data-x="${i}" title="Tap to remove" alt="">`).join("")}</div><label class="btn o" style="cursor:pointer;color:var(--ink);display:inline-block">+ Add photo<input type="file" id="np" accept="image/*" multiple hidden></label><p class="m" style="font-size:14px">In the final app, sharing an image from WhatsApp opens this window with the photo already added.</p></div><div class="c"><h3>Profile details</h3>${F.map(f=>fld(f,old[f[0]]||"","n_")).join("")}<label for="n_chat">WhatsApp chat (source)</label><input id="n_chat" list="cs" value="${esc(oc)}" placeholder="Which chat did this come from?"><datalist id="cs">${cs.map(c=>`<option value="${esc(c)}">`).join("")}</datalist><button class="btn p" id="ns" style="width:100%;margin-top:18px">Save profile</button></div></div></div>`}
@@ -211,6 +250,7 @@ async function logout(){
  P=[];page=1;totalProfiles=0;viewerId=null;canManageAll=false;Q='';
  searchSeq++;clearTimeout(searchTimer);V={v:'home'};E=0;S=0;D=0;N=null;
  document.getElementById('md')?.remove();
+  closeSharePreview();
  document.getElementById('photoZoomOverlay')?.remove();
  document.body.style.overflow='';
  loginView();
