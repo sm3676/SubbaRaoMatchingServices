@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     whatsapp_phone_number_id: str = ""
     frontend_origin: str = "http://localhost:5173"
     tesseract_cmd: str = ""
+    r2_endpoint_url: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = "subbarao-profile-photos"
+    r2_enabled: bool = False
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
